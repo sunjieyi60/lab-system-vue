@@ -50,10 +50,11 @@
         </el-form-item>
       </el-form>
 
-      <div class="login-tips">
+      <!-- 无注册功能 -->
+      <!-- <div class="login-tips">
         <span>还没有账号？</span>
         <el-link type="primary" @click="goRegister">立即注册</el-link>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

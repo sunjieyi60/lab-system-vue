@@ -70,7 +70,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-divider v-if="index < dataGroup.length - 1" />
+      <!-- <el-divider v-if="index < dataGroup.length - 1" /> -->
     </div>
   </el-card>
 </template>

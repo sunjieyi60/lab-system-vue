@@ -85,6 +85,9 @@ export interface User {
 export interface Semester {
   id: number;
   name: string;
+  startDate?: string;    // 学期开始日期 yyyy-MM-dd
+  endDate?: string;      // 学期结束日期 yyyy-MM-dd
+  totalWeeks?: number;   // 学期总周数
 }
 
 // ============================================
@@ -150,7 +153,7 @@ export interface DataSource {
 export interface TimeRule {
   id: string;
   scheduleTaskId: string;  // 【必须】
-  semesterId: number;
+  semesterId?: number;     // 学期ID（可选），选择后周次相关参数才有效
   weekdays: number[];      // [1,2,3,4,5,6,7]
   startWeek: number;
   endWeek: number;

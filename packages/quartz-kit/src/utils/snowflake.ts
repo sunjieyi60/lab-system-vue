@@ -130,13 +130,10 @@ export function createEmptyScheduleConfig(laboratoryId: number): import('../type
     timeRule: {
       id: timeRuleId,
       scheduleTaskId: taskId,
-      semesterId: 0,
-      weekdays: [1, 2, 3, 4, 5],
+      weekdays: [1, 2, 3, 4, 5],  // 默认工作日，与学期无关
       startWeek: 1,
       endWeek: 16,
       weekType: 'ALL' as import('../types/quartz').WeekType,
-      startTime: '08:00:00',
-      endTime: '18:00:00',
     },
     dataGroup: [],
     conditionGroups: [],

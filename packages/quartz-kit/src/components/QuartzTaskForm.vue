@@ -148,6 +148,7 @@ const emit = defineEmits<{
   submit: [data: { isCreate: boolean; data: ScheduleConfigRoot }]
   cancel: []
   change: [data: ScheduleConfigRoot]
+  'lab-change': [labId: number]
 }>()
 
 // ============================================
@@ -255,7 +256,7 @@ function handleArgsConfirm(args: number[]) {
 // ============================================
 // 实验室切换处理
 // ============================================
-function handleLabChange(_labId: number) {
+function handleLabChange(labId: number) {
   // 切换实验室时清空数据源和动作组中的设备选择
   // 因为不同实验室的设备不同
   form.formData.dataGroup = []
@@ -266,6 +267,8 @@ function handleLabChange(_labId: number) {
     })
   })
   ElMessage.warning('实验室已切换，请重新选择设备')
+  // 通知父组件实验室已切换
+  emit('lab-change', labId)
 }
 
 // ============================================

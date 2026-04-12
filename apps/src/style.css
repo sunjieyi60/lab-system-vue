@@ -193,3 +193,8 @@ html,body,#app {
   left: calc(50% - 700px/2);
   width:560px !important;
 }
+
+/* 隐藏非输入元素的光标，防止点击时出现不必要的文本光标 */
+div, label, h1, h2, h3, h4, h5, h6, span, p, button, a, li, ul, ol, table, th, td, tr, header, footer, nav, section, article, aside, main {
+  caret-color: transparent;
+}

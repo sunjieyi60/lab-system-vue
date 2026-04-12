@@ -89,7 +89,7 @@
           </el-table-column>
           <el-table-column prop="lockStatus" label="门锁状态" align="center" min-width="120">
             <template #default="{ row }">
-              {{ row.lockStatus }}
+              {{ row.lockStatus }}{{ row.isLock ? '（锁定）' : '（未锁定）' }}
             </template>
           </el-table-column>
           <el-table-column prop="delayTime" label="延时时间" align="center" min-width="100">
@@ -209,6 +209,7 @@ import { ref, computed, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user.js";
 import { useDeviceStore, DeviceType } from "@/stores/device.js";
+import { controlDevice } from "@/api/device.js";
 
 // 引入 control-kit 组件
 import AccessControl from "@packages/control-kit/src/components/controls/AccessControl.vue";
@@ -337,26 +338,28 @@ const selectedAccessDevice = computed(() => {
  * @param {Task[]} tasks - 任务列表
  * @param {Function} callback - 执行结果回调
  */
-const handleControlExecute = (tasks, callback) => {
+const handleControlExecute = async (tasks, callback) => {
   console.log('【AccessControl】执行控制命令:', tasks);
   
-  const executeTasks = async () => {
-    try {
-      // TODO: 在这里替换为实际的控制 API 调用
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      ElMessage.success('控制命令已发送');
-      handleRefresh();
-      
-      if (callback) callback(true, '执行成功');
-    } catch (error) {
-      console.error('控制命令执行失败:', error);
-      ElMessage.error('控制命令执行失败: ' + (error.message || '未知错误'));
-      if (callback) callback(false, error.message || '执行失败');
+  try {
+    // 调用实际 API 发送控制命令，task 原封不动发送
+    for (const task of tasks) {
+      const res = await controlDevice(task);
+      console.log('【控制响应】', res);
     }
-  };
-  
-  executeTasks();
+    
+    ElMessage.success('控制命令已发送');
+    handleRefresh();
+    
+    if (callback) callback(true, '执行成功');
+    showRemote.value = false;
+    showLock.value = false;
+    
+  } catch (error) {
+    console.error('控制命令执行失败:', error);
+    ElMessage.error('控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
 };
 
 /**
@@ -364,53 +367,51 @@ const handleControlExecute = (tasks, callback) => {
  * @param {Task[]} tasks - 任务列表（单设备）
  * @param {Function} callback - 执行结果回调
  */
-const handleBatchControlExecute = (tasks, callback) => {
+const handleBatchControlExecute = async (tasks, callback) => {
   console.log('【AccessControl】批量执行控制命令:', tasks);
   
-  const executeBatchTasks = async () => {
-    try {
-      // 为每个选中的设备生成对应的任务
-      const batchTasks = selectedRows.value.flatMap(row => {
-        const device = {
-          id: row.id,
-          deviceName: row.deviceName || '门禁设备',
-          deviceType: 'Access',
-          belongToLaboratoryId: row.labId,
-          pollingEnabled: false,
-          address: row.address || row.rawRecord?.address || 1,
-          rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
-          isLock: row.isLock || row.rawRecord?.isLock || false,
-        };
-        
-        // 根据原始任务生成每个设备的任务
-        return tasks.map(task => ({
-          ...task,
-          deviceId: device.id,
-          args: [device.address, ...(task.args.slice(1) || [])],
-        }));
-      });
+  try {
+    // 为每个选中的设备生成对应的任务
+    const batchTasks = selectedRows.value.flatMap(row => {
+      const device = {
+        id: row.id,
+        deviceName: row.deviceName || '门禁设备',
+        deviceType: 'Access',
+        belongToLaboratoryId: row.labId,
+        pollingEnabled: false,
+        address: row.address || row.rawRecord?.address || 1,
+        rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
+        isLock: row.isLock || row.rawRecord?.isLock || false,
+      };
       
-      console.log('【批量任务】', batchTasks);
-      
-      // TODO: 在这里替换为实际的批量控制 API 调用
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      ElMessage.success(`批量控制命令已发送（${selectedRows.value.length}个设备）`);
-      handleRefresh();
-      
-      // 关闭弹窗
-      showRemote.value = false;
-      showLock.value = false;
-      
-      if (callback) callback(true, '批量执行成功');
-    } catch (error) {
-      console.error('批量控制命令执行失败:', error);
-      ElMessage.error('批量控制命令执行失败: ' + (error.message || '未知错误'));
-      if (callback) callback(false, error.message || '执行失败');
-    }
-  };
-  
-  executeBatchTasks();
+      // 根据原始任务生成每个设备的任务
+      return tasks.map(task => ({
+        ...task,
+        deviceId: device.id,
+        args: [device.address, ...(task.args.slice(1) || [])],
+      }));
+    });
+    
+    console.log('【批量任务】', batchTasks);
+    
+    // 批量调用 API 发送控制命令，task 原封不动发送
+    const promises = batchTasks.map(task => controlDevice(task));
+    
+    await Promise.all(promises);
+    
+    ElMessage.success(`批量控制命令已发送（${selectedRows.value.length}个设备）`);
+    handleRefresh();
+    
+    // 关闭弹窗
+    showRemote.value = false;
+    showLock.value = false;
+    
+    if (callback) callback(true, '批量执行成功');
+  } catch (error) {
+    console.error('批量控制命令执行失败:', error);
+    ElMessage.error('批量控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
 };
 
 // 计算属性：表格数据
@@ -429,6 +430,7 @@ const tableData = computed(() => {
     ...item,
     address: item.rawRecord?.address || item.address,
     selfId: item.rawRecord?.selfId || item.selfId,
+    isLock: item.rawRecord?.isLock ?? item.isLock ?? false,
   }));
 });
 

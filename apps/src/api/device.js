@@ -37,7 +37,6 @@ export function controlDevice(data) {
     url: "/device/control",
     method: "post",
     data: {
-      priority: "0",
       ...data,
     },
   });

@@ -57,7 +57,7 @@ const routes = [
       {
         path: "hvac",
         name: "Hvac",
-        component: () => import("@/views/control-hvac.vue"),
+        component: () => import("@/views/aboutControl/aircondition.vue"),
         meta: { title: "中央空调监控" },
       },
       {

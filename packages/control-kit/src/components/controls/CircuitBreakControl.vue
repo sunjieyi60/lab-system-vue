@@ -9,8 +9,8 @@
       </div>
     </div>
 
-    <!-- 状态显示 -->
-    <div v-if="showStatus" class="control-section">
+    <!-- 状态显示（仅单设备模式） -->
+    <div v-if="showStatus && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ statusTitle }}</h4>
       <div class="status-display">
         <div 
@@ -31,13 +31,15 @@
 
     <!-- 控制按钮 -->
     <div v-if="showControlButtons" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ controlTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ controlTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="control-buttons">
         <button 
           v-if="showOpenButton"
           class="btn btn-success"
           :class="{ 'btn-large': largeButtons }"
-          :disabled="loading || isClosed"
+          :disabled="loading || (!isBatchMode && isClosed)"
           @click="handleOpen"
         >
           <span v-if="loading && activeCommand === 'open'" class="spinner"></span>
@@ -48,7 +50,7 @@
           v-if="showCloseButton"
           class="btn btn-danger"
           :class="{ 'btn-large': largeButtons }"
-          :disabled="loading || !isClosed"
+          :disabled="loading || (!isBatchMode && !isClosed)"
           @click="handleClose"
         >
           <span v-if="loading && activeCommand === 'close'" class="spinner"></span>
@@ -85,6 +87,7 @@
         <div class="modal-body">
           <p>{{ confirmMessage }}</p>
           <p v-if="confirmHint" class="modal-hint">{{ confirmHint }}</p>
+          <p v-if="isBatchMode" class="modal-batch-info">将影响 {{ deviceCount }} 台设备</p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-default" @click="cancelConfirm">{{ cancelButtonText }}</button>
@@ -99,25 +102,44 @@
       </div>
     </div>
 
-    <!-- 设备信息 -->
-    <div v-if="showDeviceInfo" class="control-section">
+    <!-- 设备信息（单设备模式时显示） -->
+    <div v-if="showDeviceInfo && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ deviceInfoTitle }}</h4>
       <div class="device-info">
         <div v-if="showInfoId" class="info-item">
           <span class="info-label">设备ID:</span>
-          <span class="info-value">{{ device.id }}</span>
+          <span class="info-value">{{ deviceList[0]?.id }}</span>
         </div>
         <div v-if="showInfoName" class="info-item">
           <span class="info-label">设备名称:</span>
-          <span class="info-value">{{ device.deviceName }}</span>
+          <span class="info-value">{{ deviceList[0]?.deviceName }}</span>
         </div>
         <div v-if="showInfoAddress" class="info-item">
           <span class="info-label">地址:</span>
-          <span class="info-value">{{ device.address }}</span>
+          <span class="info-value">{{ deviceList[0]?.address }}</span>
         </div>
         <div v-if="showInfoGateway" class="info-item">
           <span class="info-label">RS485网关:</span>
-          <span class="info-value">{{ device.rs485GatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.rs485GatewayId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量设备信息汇总（批量模式时显示） -->
+    <div v-if="showDeviceInfo && isBatchMode" class="control-section">
+      <h4 v-if="showSectionTitles" class="section-title">设备信息汇总</h4>
+      <div class="device-info-summary">
+        <div class="info-item">
+          <span class="info-label">设备数量:</span>
+          <span class="info-value">{{ deviceCount }} 台</span>
+        </div>
+        <div v-if="showInfoAddress" class="info-item">
+          <span class="info-label">地址范围:</span>
+          <span class="info-value">{{ addressRange }}</span>
+        </div>
+        <div v-if="showInfoGateway" class="info-item">
+          <span class="info-label">RS485网关:</span>
+          <span class="info-value">{{ gatewayInfo }}</span>
         </div>
       </div>
     </div>
@@ -125,14 +147,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { CircuitBreak, Task, Priority } from '../../types/device';
 import { CIRCUIT_COMMANDS } from '../../types/device';
 
 // ==================== Props 定义 ====================
 const props = withDefaults(defineProps<{
-  // 设备数据
-  device: CircuitBreak;
+  // 设备数据（支持单设备或设备数组）
+  device: CircuitBreak | CircuitBreak[];
   
   // 任务优先级
   priority?: Priority;
@@ -245,18 +267,56 @@ const showConfirm = ref(false);
 const confirmMessage = ref('');
 const confirmAction = ref<'open' | 'close' | null>(null);
 
+// ==================== 计算属性 ====================
+
+// 判断是否为批量模式
+const isBatchMode = computed(() => {
+  return Array.isArray(props.device);
+});
+
+// 获取设备列表
+const deviceList = computed((): CircuitBreak[] => {
+  if (Array.isArray(props.device)) {
+    return props.device;
+  }
+  return [props.device];
+});
+
+// 设备数量
+const deviceCount = computed(() => deviceList.value.length);
+
+// 计算地址范围
+const addressRange = computed(() => {
+  if (deviceList.value.length === 0) return '-';
+  const addresses = deviceList.value.map(d => d.address).filter(Boolean);
+  if (addresses.length === 0) return '-';
+  const min = Math.min(...addresses);
+  const max = Math.max(...addresses);
+  return min === max ? `${min}` : `${min}-${max}`;
+});
+
+// 网关信息
+const gatewayInfo = computed(() => {
+  const gateways = [...new Set(deviceList.value.map(d => d.rs485GatewayId).filter(Boolean))];
+  if (gateways.length === 0) return '-';
+  if (gateways.length === 1) return `${gateways[0]}`;
+  return `${gateways[0]} 等 ${gateways.length} 个`;
+});
+
+// ==================== 方法 ====================
+
 // 生成基础 Task 对象
-const createBaseTask = (): Omit<Task, 'commandLine' | 'args'> => ({
+const createBaseTask = (device: CircuitBreak): Omit<Task, 'commandLine' | 'args'> => ({
   priority: props.priority,
   deviceType: 'CircuitBreak',
-  deviceId: props.device.id,
+  deviceId: device.id,
 });
 
 // ========== 控制处理 ==========
 
-// 合闸 - 返回单个 Task
+// 合闸
 const handleOpen = () => {
-  if (isClosed.value) return;
+  if (!isBatchMode.value && isClosed.value) return;
   
   if (!props.showConfirmDialog) {
     executeOpen();
@@ -269,20 +329,20 @@ const handleOpen = () => {
 };
 
 const executeOpen = () => {
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: CIRCUIT_COMMANDS.OPEN,
-    args: [props.device.address],
-  }];
+    args: [device.address],
+  }));
   
   emitExecute(tasks, 'open', (success) => {
-    if (success) isClosed.value = true;
+    if (success && !isBatchMode.value) isClosed.value = true;
   });
 };
 
-// 分闸 - 返回单个 Task
+// 分闸
 const handleClose = () => {
-  if (!isClosed.value) return;
+  if (!isBatchMode.value && !isClosed.value) return;
   
   if (!props.showConfirmDialog) {
     executeClose();
@@ -295,14 +355,14 @@ const handleClose = () => {
 };
 
 const executeClose = () => {
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: CIRCUIT_COMMANDS.CLOSE,
-    args: [props.device.address],
-  }];
+    args: [device.address],
+  }));
   
   emitExecute(tasks, 'close', (success) => {
-    if (success) isClosed.value = false;
+    if (success && !isBatchMode.value) isClosed.value = false;
   });
 };
 
@@ -323,13 +383,13 @@ const cancelConfirm = () => {
   confirmAction.value = null;
 };
 
-// 查询状态 - 返回单个 Task
+// 查询状态
 const handleQueryStatus = () => {
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: CIRCUIT_COMMANDS.REQUEST_DATA,
-    args: [props.device.address],
-  }];
+    args: [device.address],
+  }));
   
   emitExecute(tasks, 'queryStatus');
 };
@@ -350,11 +410,11 @@ const emitExecute = (tasks: Task[], commandKey: string, callback?: (success: boo
 defineExpose({
   // 刷新状态
   refreshStatus: () => {
-    const tasks: Task[] = [{
-      ...createBaseTask(),
+    const tasks: Task[] = deviceList.value.map(device => ({
+      ...createBaseTask(device),
       commandLine: CIRCUIT_COMMANDS.REQUEST_DATA,
-      args: [props.device.address],
-    }];
+      args: [device.address],
+    }));
     emit('execute', tasks);
   },
   // 获取/设置状态
@@ -364,18 +424,33 @@ defineExpose({
   },
   // 生成控制 Task
   generateTasks: (command: 'open' | 'close' | 'queryStatus'): Task[] => {
-    const base = createBaseTask();
     switch (command) {
       case 'open':
-        return [{ ...base, commandLine: CIRCUIT_COMMANDS.OPEN, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: CIRCUIT_COMMANDS.OPEN,
+          args: [device.address],
+        }));
       case 'close':
-        return [{ ...base, commandLine: CIRCUIT_COMMANDS.CLOSE, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: CIRCUIT_COMMANDS.CLOSE,
+          args: [device.address],
+        }));
       case 'queryStatus':
-        return [{ ...base, commandLine: CIRCUIT_COMMANDS.REQUEST_DATA, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: CIRCUIT_COMMANDS.REQUEST_DATA,
+          args: [device.address],
+        }));
       default:
         return [];
     }
   },
+  // 获取设备列表
+  getDevices: () => deviceList.value,
+  // 判断是否为批量模式
+  isBatch: () => isBatchMode.value,
 });
 </script>
 
@@ -650,6 +725,11 @@ defineExpose({
   font-size: 13px !important;
 }
 
+.modal-batch-info {
+  color: #1890ff !important;
+  font-weight: 500;
+}
+
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid #e8e8e8;
@@ -659,6 +739,12 @@ defineExpose({
 }
 
 .device-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.device-info-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;

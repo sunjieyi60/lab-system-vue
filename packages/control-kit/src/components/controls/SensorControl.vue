@@ -11,7 +11,9 @@
 
     <!-- 数据查询 -->
     <div v-if="showQuerySection" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ querySectionTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ querySectionTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="query-section">
         <button 
           class="btn btn-primary"
@@ -26,8 +28,8 @@
       </div>
     </div>
 
-    <!-- 传感器数据显示 -->
-    <div v-if="showDataDisplay && sensorData" class="control-section">
+    <!-- 传感器数据显示（仅单设备模式） -->
+    <div v-if="showDataDisplay && sensorData && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ dataDisplayTitle }}</h4>
       <div class="data-display">
         <div class="data-card">
@@ -54,35 +56,54 @@
       </div>
     </div>
 
-    <!-- 设备信息 -->
-    <div v-if="showDeviceInfo" class="control-section">
+    <!-- 设备信息（单设备模式时显示） -->
+    <div v-if="showDeviceInfo && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ deviceInfoTitle }}</h4>
       <div class="device-info">
         <div v-if="showInfoId" class="info-item">
           <span class="info-label">设备ID:</span>
-          <span class="info-value">{{ device.id }}</span>
+          <span class="info-value">{{ deviceList[0]?.id }}</span>
         </div>
         <div v-if="showInfoName" class="info-item">
           <span class="info-label">设备名称:</span>
-          <span class="info-value">{{ device.deviceName }}</span>
+          <span class="info-value">{{ deviceList[0]?.deviceName }}</span>
         </div>
         <div v-if="showInfoAddress" class="info-item">
           <span class="info-label">地址:</span>
-          <span class="info-value">{{ device.address }}</span>
+          <span class="info-value">{{ deviceList[0]?.address }}</span>
         </div>
         <div v-if="showInfoSelfId" class="info-item">
           <span class="info-label">子ID:</span>
-          <span class="info-value">{{ device.selfId }}</span>
+          <span class="info-value">{{ deviceList[0]?.selfId }}</span>
         </div>
         <div v-if="showInfoGateway" class="info-item">
           <span class="info-label">RS485网关:</span>
-          <span class="info-value">{{ device.rs485GatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.rs485GatewayId }}</span>
         </div>
         <div v-if="showInfoPolling" class="info-item">
           <span class="info-label">轮询状态:</span>
-          <span class="info-value" :class="{ enabled: device.pollingEnabled }">
-            {{ device.pollingEnabled ? pollingEnabledText : pollingDisabledText }}
+          <span class="info-value" :class="{ enabled: deviceList[0]?.pollingEnabled }">
+            {{ deviceList[0]?.pollingEnabled ? pollingEnabledText : pollingDisabledText }}
           </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量设备信息汇总（批量模式时显示） -->
+    <div v-if="showDeviceInfo && isBatchMode" class="control-section">
+      <h4 v-if="showSectionTitles" class="section-title">设备信息汇总</h4>
+      <div class="device-info-summary">
+        <div class="info-item">
+          <span class="info-label">设备数量:</span>
+          <span class="info-value">{{ deviceCount }} 台</span>
+        </div>
+        <div v-if="showInfoAddress" class="info-item">
+          <span class="info-label">地址范围:</span>
+          <span class="info-value">{{ addressRange }}</span>
+        </div>
+        <div v-if="showInfoGateway" class="info-item">
+          <span class="info-label">RS485网关:</span>
+          <span class="info-value">{{ gatewayInfo }}</span>
         </div>
       </div>
     </div>
@@ -90,14 +111,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Sensor, Task, Priority } from '../../types/device';
 import { SENSOR_COMMANDS } from '../../types/device';
 
 // ==================== Props 定义 ====================
 const props = withDefaults(defineProps<{
-  // 设备数据
-  device: Sensor;
+  // 设备数据（支持单设备或设备数组）
+  device: Sensor | Sensor[];
   
   // 任务优先级
   priority?: Priority;
@@ -214,22 +235,60 @@ interface SensorData {
 
 const sensorData = ref<SensorData | null>(null);
 
+// ==================== 计算属性 ====================
+
+// 判断是否为批量模式
+const isBatchMode = computed(() => {
+  return Array.isArray(props.device);
+});
+
+// 获取设备列表
+const deviceList = computed((): Sensor[] => {
+  if (Array.isArray(props.device)) {
+    return props.device;
+  }
+  return [props.device];
+});
+
+// 设备数量
+const deviceCount = computed(() => deviceList.value.length);
+
+// 计算地址范围
+const addressRange = computed(() => {
+  if (deviceList.value.length === 0) return '-';
+  const addresses = deviceList.value.map(d => d.address).filter(Boolean);
+  if (addresses.length === 0) return '-';
+  const min = Math.min(...addresses);
+  const max = Math.max(...addresses);
+  return min === max ? `${min}` : `${min}-${max}`;
+});
+
+// 网关信息
+const gatewayInfo = computed(() => {
+  const gateways = [...new Set(deviceList.value.map(d => d.rs485GatewayId).filter(Boolean))];
+  if (gateways.length === 0) return '-';
+  if (gateways.length === 1) return `${gateways[0]}`;
+  return `${gateways[0]} 等 ${gateways.length} 个`;
+});
+
+// ==================== 方法 ====================
+
 // 生成基础 Task 对象
-const createBaseTask = (): Omit<Task, 'commandLine' | 'args'> => ({
+const createBaseTask = (device: Sensor): Omit<Task, 'commandLine' | 'args'> => ({
   priority: props.priority,
   deviceType: 'Sensor',
-  deviceId: props.device.id,
+  deviceId: device.id,
 });
 
 // ========== 控制处理 ==========
 
-// 查询数据 - 返回单个 Task
+// 查询数据
 const handleQuery = () => {
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: SENSOR_COMMANDS.REQUEST_DATA,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   loading.value = true;
   
@@ -237,8 +296,10 @@ const handleQuery = () => {
     loading.value = false;
     if (success) {
       console.log('传感器数据查询已发送');
-      // Demo 模式下模拟数据
-      simulateDataReceived();
+      // Demo 模式下模拟数据（仅单设备模式）
+      if (!isBatchMode.value) {
+        simulateDataReceived();
+      }
     }
   });
 };
@@ -260,11 +321,11 @@ const simulateDataReceived = () => {
 defineExpose({
   // 刷新状态（查询数据）
   refreshStatus: () => {
-    const tasks: Task[] = [{
-      ...createBaseTask(),
+    const tasks: Task[] = deviceList.value.map(device => ({
+      ...createBaseTask(device),
       commandLine: SENSOR_COMMANDS.REQUEST_DATA,
-      args: [props.device.address, props.device.selfId],
-    }];
+      args: [device.address, device.selfId],
+    }));
     emit('execute', tasks);
   },
   // 获取/设置数据
@@ -278,14 +339,18 @@ defineExpose({
   // 生成控制 Task
   generateTasks: (command: 'queryStatus'): Task[] => {
     if (command === 'queryStatus') {
-      return [{
-        ...createBaseTask(),
+      return deviceList.value.map(device => ({
+        ...createBaseTask(device),
         commandLine: SENSOR_COMMANDS.REQUEST_DATA,
-        args: [props.device.address, props.device.selfId],
-      }];
+        args: [device.address, device.selfId],
+      }));
     }
     return [];
   },
+  // 获取设备列表
+  getDevices: () => deviceList.value,
+  // 判断是否为批量模式
+  isBatch: () => isBatchMode.value,
 });
 </script>
 
@@ -443,6 +508,12 @@ defineExpose({
 }
 
 .device-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.device-info-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;

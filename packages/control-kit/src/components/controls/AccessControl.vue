@@ -1,20 +1,16 @@
 <template>
   <div class="access-control">
-    <!-- 设备锁定提示 -->
-    <div v-if="device.isLock && showLockWarning" class="lock-warning">
-      <span class="lock-icon">🔒</span>
-      <span>设备已锁定，无法操作</span>
-    </div>
-
     <!-- 单次控制 -->
     <div v-if="showSingleControl" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ singleControlTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ singleControlTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="single-control">
         <button 
           v-if="showOpenButton"
           class="btn btn-success"
           :class="{ 'btn-large': largeButtons }"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleOpen"
         >
           <span v-if="loading && activeCommand === 'open'" class="spinner"></span>
@@ -25,30 +21,21 @@
           v-if="showCloseButton"
           class="btn btn-danger"
           :class="{ 'btn-large': largeButtons }"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleClose"
         >
           <span v-if="loading && activeCommand === 'close'" class="spinner"></span>
           <span v-else>{{ closeIcon }}</span>
           {{ closeButtonText }}
         </button>
-        <button 
-          v-if="showQueryStatus"
-          class="btn btn-info"
-          :class="{ 'btn-large': largeButtons }"
-          :disabled="loading || device.isLock"
-          @click="handleQueryStatus"
-        >
-          <span v-if="loading && activeCommand === 'queryStatus'" class="spinner"></span>
-          <span v-else>📊</span>
-          {{ queryStatusText }}
-        </button>
       </div>
     </div>
 
     <!-- 持续状态设置（合并栏目） -->
     <div v-if="showPersistControl && (showStateSelector || showLockSelector)" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ persistControlTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ persistControlTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="persist-control">
         <!-- 状态选择 -->
         <div v-if="showStateSelector" class="form-row">
@@ -64,7 +51,6 @@
                 v-model="stateValue" 
                 type="radio" 
                 :value="option.value"
-                :disabled="device.isLock"
               >
               {{ option.label }}
             </label>
@@ -85,7 +71,6 @@
                 v-model="lockValue" 
                 type="radio" 
                 :value="option.value"
-                :disabled="device.isLock"
               >
               {{ option.label }}
             </label>
@@ -96,18 +81,20 @@
         <button 
           v-if="showApplyButton"
           class="btn btn-primary btn-full"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handlePersistControl"
         >
           <span v-if="loading && activeCommand === 'persist'" class="spinner"></span>
-          {{ persistApplyButtonText }}
+          {{ persistApplyButtonText }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
         </button>
       </div>
     </div>
 
     <!-- 延时设置 -->
     <div v-if="showDelayControl" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ delayControlTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ delayControlTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="delay-control">
         <div class="slider-container">
           <div class="delay-display">
@@ -121,7 +108,6 @@
             :max="delayMax"
             :step="delayStep"
             class="slider"
-            :disabled="device.isLock"
             @input="delayTime = Number(($event.target as HTMLInputElement).value)"
           >
           <div class="slider-labels">
@@ -134,34 +120,53 @@
         <button 
           v-if="showApplyButton"
           class="btn btn-primary btn-full"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleDelaySet"
         >
           <span v-if="loading && activeCommand === 'delay'" class="spinner"></span>
-          {{ setDelayButtonText }}
+          {{ setDelayButtonText }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
         </button>
       </div>
     </div>
 
-    <!-- 设备信息 -->
-    <div v-if="showDeviceInfo" class="control-section">
+    <!-- 设备信息（单设备模式时显示） -->
+    <div v-if="showDeviceInfo && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ deviceInfoTitle }}</h4>
       <div class="device-info">
         <div v-if="showInfoId" class="info-item">
           <span class="info-label">设备ID:</span>
-          <span class="info-value">{{ device.id }}</span>
+          <span class="info-value">{{ deviceList[0]?.id }}</span>
         </div>
         <div v-if="showInfoName" class="info-item">
           <span class="info-label">设备名称:</span>
-          <span class="info-value">{{ device.deviceName }}</span>
+          <span class="info-value">{{ deviceList[0]?.deviceName }}</span>
         </div>
         <div v-if="showInfoAddress" class="info-item">
           <span class="info-label">地址:</span>
-          <span class="info-value">{{ device.address }}</span>
+          <span class="info-value">{{ deviceList[0]?.address }}</span>
         </div>
         <div v-if="showInfoGateway" class="info-item">
           <span class="info-label">RS485网关:</span>
-          <span class="info-value">{{ device.rs485GatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.rs485GatewayId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量设备信息汇总（批量模式时显示） -->
+    <div v-if="showDeviceInfo && isBatchMode" class="control-section">
+      <h4 v-if="showSectionTitles" class="section-title">设备信息汇总</h4>
+      <div class="device-info-summary">
+        <div class="info-item">
+          <span class="info-label">设备数量:</span>
+          <span class="info-value">{{ deviceCount }} 台</span>
+        </div>
+        <div v-if="showInfoAddress" class="info-item">
+          <span class="info-label">地址范围:</span>
+          <span class="info-value">{{ addressRange }}</span>
+        </div>
+        <div v-if="showInfoGateway" class="info-item">
+          <span class="info-label">RS485网关:</span>
+          <span class="info-value">{{ gatewayInfo }}</span>
         </div>
       </div>
     </div>
@@ -169,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Access, Task, Priority } from '../../types/device';
 import {
   ACCESS_COMMANDS,
@@ -177,8 +182,8 @@ import {
 
 // ==================== Props 定义 ====================
 const props = withDefaults(defineProps<{
-  // 设备数据
-  device: Access;
+  // 设备数据（支持单设备或设备数组）
+  device: Access | Access[];
   
   // 任务优先级
   priority?: Priority;
@@ -302,116 +307,114 @@ const lockOptions = [
   { label: '保持', value: 'keep' as const },
 ];
 
+// ==================== 计算属性 ====================
+
+// 判断是否为批量模式
+const isBatchMode = computed(() => {
+  return Array.isArray(props.device);
+});
+
+// 获取设备列表
+const deviceList = computed((): Access[] => {
+  if (Array.isArray(props.device)) {
+    return props.device;
+  }
+  return [props.device];
+});
+
+// 设备数量
+const deviceCount = computed(() => deviceList.value.length);
+
+// 计算地址范围
+const addressRange = computed(() => {
+  if (deviceList.value.length === 0) return '-';
+  const addresses = deviceList.value.map(d => d.address).filter(Boolean);
+  if (addresses.length === 0) return '-';
+  const min = Math.min(...addresses);
+  const max = Math.max(...addresses);
+  return min === max ? `${min}` : `${min}-${max}`;
+});
+
+// 网关信息
+const gatewayInfo = computed(() => {
+  const gateways = [...new Set(deviceList.value.map(d => d.rs485GatewayId).filter(Boolean))];
+  if (gateways.length === 0) return '-';
+  if (gateways.length === 1) return `${gateways[0]}`;
+  return `${gateways[0]} 等 ${gateways.length} 个`;
+});
+
+// ==================== 方法 ====================
+
 // 生成基础 Task 对象
-const createBaseTask = (): Omit<Task, 'commandLine' | 'args'> => ({
+const createBaseTask = (device: Access): Omit<Task, 'commandLine' | 'args'> => ({
   priority: props.priority,
   deviceType: 'Access',
-  deviceId: props.device.id,
+  deviceId: device.id,
 });
 
 // ========== 单次控制 ==========
 
-// 开门 - 返回单个 Task
+// 开门
 const handleOpen = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: ACCESS_COMMANDS.OPEN_ONCE,
-    args: [props.device.address],
-  }];
+    args: [device.address],
+  }));
   
   emitExecute(tasks, 'open');
 };
 
-// 关门 - 返回单个 Task
+// 关门
 const handleClose = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: ACCESS_COMMANDS.CLOSE_ONCE,
-    args: [props.device.address],
-  }];
+    args: [device.address],
+  }));
   
   emitExecute(tasks, 'close');
 };
 
-// 查询状态 - 返回单个 Task
-const handleQueryStatus = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
-    commandLine: ACCESS_COMMANDS.REQUEST_DATA,
-    args: [props.device.address],
-  }];
-  
-  emitExecute(tasks, 'queryStatus');
-};
-
 // ========== 持续状态控制（合并发送）==========
 
-// 状态映射到指令
-const STATE_COMMAND_MAP: Record<string, string> = {
-  'open': ACCESS_COMMANDS.OPEN_PERSIST_KEEP,
-  'close': ACCESS_COMMANDS.CLOSE_PERSIST_KEEP,
-  'keep': ACCESS_COMMANDS.KEEP_STATUS_UNLOCK,
+// 门状态与锁定状态组合映射到指令
+// 格式: `${state}-${lock}` -> CommandLine
+const PERSIST_COMMAND_MAP: Record<string, string> = {
+  'open-lock': ACCESS_COMMANDS.OPEN_PERSIST_LOCK,
+  'open-unlock': ACCESS_COMMANDS.OPEN_PERSIST_UNLOCK,
+  'open-keep': ACCESS_COMMANDS.OPEN_PERSIST_KEEP,
+  'close-lock': ACCESS_COMMANDS.CLOSE_PERSIST_LOCK,
+  'close-unlock': ACCESS_COMMANDS.CLOSE_PERSIST_UNLOCK,
+  'close-keep': ACCESS_COMMANDS.CLOSE_PERSIST_KEEP,
+  'keep-lock': ACCESS_COMMANDS.KEEP_STATUS_LOCK,
+  'keep-unlock': ACCESS_COMMANDS.KEEP_STATUS_UNLOCK,
 };
 
-// 锁定映射到指令
-const LOCK_COMMAND_MAP: Record<string, string> = {
-  'lock': ACCESS_COMMANDS.KEEP_STATUS_LOCK,
-  'unlock': ACCESS_COMMANDS.KEEP_STATUS_UNLOCK,
-  'keep': ACCESS_COMMANDS.KEEP_STATUS_UNLOCK,
-};
-
-// 合并处理 - 同时发送状态和锁定指令
+// 根据门状态和锁定状态组合选择对应的指令
 const handlePersistControl = () => {
-  if (props.device.isLock) return;
+  const key = `${stateValue.value}-${lockValue.value}`;
+  const commandLine = PERSIST_COMMAND_MAP[key];
   
-  const tasks: Task[] = [];
-  const base = createBaseTask();
+  if (!commandLine) return;
   
-  // 状态指令
-  if (props.showStateSelector) {
-    const stateCommand = STATE_COMMAND_MAP[stateValue.value];
-    if (stateCommand) {
-      tasks.push({
-        ...base,
-        commandLine: stateCommand,
-        args: [props.device.address],
-      });
-    }
-  }
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
+    commandLine,
+    args: [device.address],
+  }));
   
-  // 锁定指令
-  if (props.showLockSelector) {
-    const lockCommand = LOCK_COMMAND_MAP[lockValue.value];
-    if (lockCommand) {
-      tasks.push({
-        ...base,
-        commandLine: lockCommand,
-        args: [props.device.address],
-      });
-    }
-  }
-  
-  if (tasks.length > 0) {
-    emitExecute(tasks, 'persist');
-  }
+  emitExecute(tasks, 'persist');
 };
 
 // ========== 延时设置 ==========
 
 const handleDelaySet = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: ACCESS_COMMANDS.SET_DELAY,
-    args: [props.device.address, delayTime.value],
-  }];
+    args: [device.address, delayTime.value],
+  }));
   
   emitExecute(tasks, 'delay');
 };
@@ -431,11 +434,11 @@ const emitExecute = (tasks: Task[], commandKey: string) => {
 defineExpose({
   // 刷新状态
   refreshStatus: () => {
-    const tasks: Task[] = [{
-      ...createBaseTask(),
+    const tasks: Task[] = deviceList.value.map(device => ({
+      ...createBaseTask(device),
       commandLine: ACCESS_COMMANDS.REQUEST_DATA,
-      args: [props.device.address],
-    }];
+      args: [device.address],
+    }));
     emit('execute', tasks);
   },
   // 获取/设置表单值
@@ -453,32 +456,59 @@ defineExpose({
   },
   // 生成控制 Task
   generateTasks: (command: 'open' | 'close' | 'queryStatus' | 'persist' | 'delay'): Task[] => {
-    const base = createBaseTask();
     switch (command) {
       case 'open':
-        return [{ ...base, commandLine: ACCESS_COMMANDS.OPEN_ONCE, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: ACCESS_COMMANDS.OPEN_ONCE,
+          args: [device.address],
+        }));
       case 'close':
-        return [{ ...base, commandLine: ACCESS_COMMANDS.CLOSE_ONCE, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: ACCESS_COMMANDS.CLOSE_ONCE,
+          args: [device.address],
+        }));
       case 'queryStatus':
-        return [{ ...base, commandLine: ACCESS_COMMANDS.REQUEST_DATA, args: [props.device.address] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: ACCESS_COMMANDS.REQUEST_DATA,
+          args: [device.address],
+        }));
       case 'persist': {
-        const tasks: Task[] = [];
-        const stateCmd = STATE_COMMAND_MAP[stateValue.value];
-        const lockCmd = LOCK_COMMAND_MAP[lockValue.value];
-        if (stateCmd) tasks.push({ ...base, commandLine: stateCmd, args: [props.device.address] });
-        if (lockCmd) tasks.push({ ...base, commandLine: lockCmd, args: [props.device.address] });
-        return tasks;
+        const key = `${stateValue.value}-${lockValue.value}`;
+        const commandLine = PERSIST_COMMAND_MAP[key];
+        if (!commandLine) return [];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine,
+          args: [device.address],
+        }));
       }
       case 'delay':
-        return [{ ...base, commandLine: ACCESS_COMMANDS.SET_DELAY, args: [props.device.address, 0, delayTime.value] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: ACCESS_COMMANDS.SET_DELAY,
+          args: [device.address, delayTime.value],
+        }));
       default:
         return [];
     }
   },
+  // 获取设备列表
+  getDevices: () => deviceList.value,
+  // 判断是否为批量模式
+  isBatch: () => isBatchMode.value,
 });
 </script>
 
 <style scoped>
+
+
+div label h1 h2 h3 h4 h5 h6 {
+  caret-color: transparent;
+}
+
 .access-control {
   padding: 16px;
 }
@@ -514,8 +544,10 @@ defineExpose({
 
 .single-control {
   display: flex;
-  gap: 12px;
+  gap: 2rem;
   flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 3rem;
 }
 
 .btn {
@@ -621,15 +653,16 @@ defineExpose({
 
 .radio-group {
   display: flex;
-  gap: 8px;
+  gap: 2rem;
   flex-wrap: wrap;
   margin-bottom: 12px;
+  justify-content: center;
 }
 
 .radio-label {
   display: inline-flex;
   align-items: center;
-  padding: 8px 16px;
+  padding: 8px 2rem;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   cursor: pointer;
@@ -714,6 +747,12 @@ defineExpose({
 }
 
 .device-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.device-info-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;

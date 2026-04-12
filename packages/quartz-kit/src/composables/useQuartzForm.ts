@@ -3,7 +3,7 @@
  * 提供表单数据的响应式状态、初始化和操作方法
  */
 
-import { reactive, ref, computed, watch, toRaw } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import type {
   ScheduleConfigRoot,
   ScheduleTask,
@@ -17,6 +17,8 @@ import type {
   WatchDog,
   DeviceType,
   FormMode,
+  ConditionGroupType,
+  AlarmType,
 } from '../types/quartz'
 import { createEmptyScheduleConfig, generateSnowflakeId } from '../utils/snowflake'
 
@@ -171,7 +173,7 @@ export function useQuartzForm(options: UseQuartzFormOptions) {
   }
 
   // ============ 条件组操作 ============
-  function addConditionGroup(type: 'ALL' | 'ANY' = 'ALL') {
+  function addConditionGroup(type: ConditionGroupType = 'ALL') {
     const groupId = generateSnowflakeId()
     const newGroup: ConditionGroup = {
       id: groupId,
@@ -283,7 +285,7 @@ export function useQuartzForm(options: UseQuartzFormOptions) {
   }
 
   // ============ 报警操作 ============
-  function addAlarm(userId?: number, type: 'SMS' | 'SMTP' = 'SMS') {
+  function addAlarm(userId?: number, type: AlarmType = 'SMS') {
     const newAlarm: Alarm = {
       id: generateSnowflakeId(),
       scheduleTaskId: taskId.value,

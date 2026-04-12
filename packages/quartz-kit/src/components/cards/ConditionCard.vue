@@ -125,7 +125,7 @@ function onConditionChange(condition: Condition, rule: ConditionRule) {
   }
 }
 
-function getDeviceTypeFromDataSource(dataSourceId: string): string | undefined {
+function getDeviceTypeFromDataSource(_dataSourceId: string): string | undefined {
   // 这个方法在 ConditionEditor 内部已经处理了，这里简化处理
   return undefined
 }

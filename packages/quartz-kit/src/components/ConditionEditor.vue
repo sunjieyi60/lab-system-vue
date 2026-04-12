@@ -133,7 +133,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import type { DataSource, Device } from '../types/quartz'
-import { DeviceType } from '../types/quartz'
 import {
   getPropertiesByDeviceType,
   getPropertyByName,
@@ -141,7 +140,6 @@ import {
   buildSpELExpression,
   parseSpELExpression,
   type ConditionRule,
-  type PropertyDefinition,
 } from '../types/deviceProperties'
 
 const props = defineProps<{

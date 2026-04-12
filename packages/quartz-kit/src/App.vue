@@ -385,7 +385,7 @@ const currentPayload = ref<ScheduleConfigRoot | null>(null)
 const currentPayloadExpanded = ref(true)
 const previewTab = ref('json')
 const serverResponse = ref<{ success: boolean; message: string; data?: any } | null>(null)
-const formRef = ref<InstanceType<typeof QuartzTaskForm> | null>(null)
+// formRef is defined on the component instance via template ref
 
 // ============================================
 // 计算属性

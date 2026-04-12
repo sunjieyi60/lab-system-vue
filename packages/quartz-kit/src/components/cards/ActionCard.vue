@@ -104,7 +104,7 @@
           </el-col>
           <el-col :span="6">
             <!-- 空调增强控制参数 -->
-            <template v-if="action.commandLine === CommandLine.ENHANCE_CONTROL_AIR_CONDITION">
+            <template v-if="action.commandLine === CommandLineValues.ENHANCE_CONTROL_AIR_CONDITION">
               <el-button
                 type="primary"
                 link
@@ -156,7 +156,7 @@ import type {
   ConditionGroup, 
   Device, 
   DeviceType, 
-  CommandLine 
+  CommandLine,
 } from '../../types/quartz'
 import { DeviceType as DeviceTypeEnum, CommandLine as CommandLineEnum } from '../../types/quartz'
 
@@ -175,7 +175,7 @@ const emit = defineEmits<{
   configArgs: [groupIndex: number, actionIndex: number, action: Action]
 }>()
 
-const CommandLine = CommandLineEnum
+const CommandLineValues = CommandLineEnum
 
 const deviceTypeOptions = [
   { label: '空调', value: DeviceTypeEnum.AirCondition },

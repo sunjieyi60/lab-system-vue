@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+// No additional imports needed
 import { Calendar } from '@element-plus/icons-vue'
 import type { TimeRule, Semester } from '../../types/quartz'
 

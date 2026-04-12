@@ -2,43 +2,65 @@
 // Quartz 定时任务表单类型定义
 // ============================================
 
-/** 设备类型枚举 */
-export enum DeviceType {
-  AirCondition = 'AirCondition',
-  CircuitBreak = 'CircuitBreak',
-  Light = 'Light',
-  Sensor = 'Sensor',
-  Access = 'Access',
+/** 设备类型 */
+export type DeviceType = 'AirCondition' | 'CircuitBreak' | 'Light' | 'Sensor' | 'Access'
+
+/** 设备类型常量 */
+export const DeviceType = {
+  AirCondition: 'AirCondition' as const,
+  CircuitBreak: 'CircuitBreak' as const,
+  Light: 'Light' as const,
+  Sensor: 'Sensor' as const,
+  Access: 'Access' as const,
 }
 
-/** 指令行枚举 */
-export enum CommandLine {
-  OPEN_AIR_CONDITION_RS485 = 'OPEN_AIR_CONDITION_RS485',
-  CLOSE_AIR_CONDITION_RS485 = 'CLOSE_AIR_CONDITION_RS485',
-  ENHANCE_CONTROL_AIR_CONDITION = 'ENHANCE_CONTROL_AIR_CONDITION',
-  OPEN_CIRCUIT_BREAK = 'OPEN_CIRCUIT_BREAK',
-  CLOSE_CIRCUIT_BREAK = 'CLOSE_CIRCUIT_BREAK',
-  OPEN_LIGHT = 'OPEN_LIGHT',
-  CLOSE_LIGHT = 'CLOSE_LIGHT',
+/** 指令行类型 */
+export type CommandLine = 
+  | 'OPEN_AIR_CONDITION_RS485'
+  | 'CLOSE_AIR_CONDITION_RS485'
+  | 'ENHANCE_CONTROL_AIR_CONDITION'
+  | 'OPEN_CIRCUIT_BREAK'
+  | 'CLOSE_CIRCUIT_BREAK'
+  | 'OPEN_LIGHT'
+  | 'CLOSE_LIGHT'
+
+/** 指令行常量 */
+export const CommandLine = {
+  OPEN_AIR_CONDITION_RS485: 'OPEN_AIR_CONDITION_RS485' as const,
+  CLOSE_AIR_CONDITION_RS485: 'CLOSE_AIR_CONDITION_RS485' as const,
+  ENHANCE_CONTROL_AIR_CONDITION: 'ENHANCE_CONTROL_AIR_CONDITION' as const,
+  OPEN_CIRCUIT_BREAK: 'OPEN_CIRCUIT_BREAK' as const,
+  CLOSE_CIRCUIT_BREAK: 'CLOSE_CIRCUIT_BREAK' as const,
+  OPEN_LIGHT: 'OPEN_LIGHT' as const,
+  CLOSE_LIGHT: 'CLOSE_LIGHT' as const,
 }
 
-/** 条件组类型枚举 */
-export enum ConditionGroupType {
-  ALL = 'ALL',
-  ANY = 'ANY',
+/** 条件组类型 */
+export type ConditionGroupType = 'ALL' | 'ANY'
+
+/** 条件组类型常量 */
+export const ConditionGroupType = {
+  ALL: 'ALL' as const,
+  ANY: 'ANY' as const,
 }
 
-/** 报警类型枚举 */
-export enum AlarmType {
-  SMS = 'SMS',
-  SMTP = 'SMTP',
+/** 报警类型 */
+export type AlarmType = 'SMS' | 'SMTP'
+
+/** 报警类型常量 */
+export const AlarmType = {
+  SMS: 'SMS' as const,
+  SMTP: 'SMTP' as const,
 }
 
-/** 周类型枚举 */
-export enum WeekType {
-  ALL = 'ALL',
-  ODD = 'ODD',
-  EVEN = 'EVEN',
+/** 周类型 */
+export type WeekType = 'ALL' | 'ODD' | 'EVEN'
+
+/** 周类型常量 */
+export const WeekType = {
+  ALL: 'ALL' as const,
+  ODD: 'ODD' as const,
+  EVEN: 'EVEN' as const,
 }
 
 /** 设备信息（用于选择） */

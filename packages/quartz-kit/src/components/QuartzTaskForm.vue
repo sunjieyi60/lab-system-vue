@@ -9,7 +9,7 @@
     >
       <!-- 任务主体 -->
       <TaskBasicCard
-        v-model:date-range="form.ranges.dateRange"
+        v-model="form.ranges.dateRange"
         :task="form.formData.task"
       />
 
@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+// FormInstance type not currently used
 
 import { useQuartzForm } from '../composables/useQuartzForm'
 import TaskBasicCard from './cards/TaskBasicCard.vue'

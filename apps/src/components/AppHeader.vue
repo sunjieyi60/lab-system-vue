@@ -42,6 +42,7 @@ const menuMap = {
     { title: "电灯开关监控", index: "/control/light" },
     { title: "环境监控", index: "/control/env" },
     { title: "智能控制", index: "/control/intelligent" },
+    { title: "设备管理", index: "/control/*" }
   ],
   "/data": [
     { title: "教务数据", index: "/data/edu" },
@@ -75,10 +76,12 @@ const currentRoute = computed(() => route.path);
   border-radius: 12px 12px 0 0 !important;
   /* 确保没有其他样式覆盖背景色（可选） */
   background-color: #ffffff;
-  padding: 20px 0 0 16px;
+  padding: 10px 0 0 16px;
 }
 :deep(.el-menu--horizontal) {
   border-bottom: none !important;
+  display: flex;
+  gap: 2rem;
 }
 
 /* 1. 每个选项加矩形框 + 统一字体样式 */

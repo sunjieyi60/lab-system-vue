@@ -8,7 +8,7 @@
     </template>
     
     <el-row :gutter="20">
-      <el-col :span="12">
+      <el-col :span="8">
         <el-form-item label="任务名称" required>
           <el-input
             v-model="task.taskName"
@@ -18,7 +18,25 @@
           />
         </el-form-item>
       </el-col>
-      <el-col :span="12">
+      <el-col :span="8">
+        <el-form-item label="所属实验室" required>
+          <el-select
+            v-model="task.laboratoryId"
+            placeholder="选择实验室"
+            style="width: 100%"
+            :disabled="readonly"
+            @change="handleLabChange"
+          >
+            <el-option
+              v-for="lab in laboratories"
+              :key="lab.id"
+              :label="lab.laboratoryName || lab.laboratoryId"
+              :value="lab.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
         <el-form-item label="Cron表达式" required>
           <el-input
             v-model="task.cron"
@@ -79,13 +97,22 @@ import { computed } from 'vue'
 import { Timer, ArrowDown } from '@element-plus/icons-vue'
 import type { ScheduleTask } from '../../types/quartz'
 
+interface Laboratory {
+  id: number
+  laboratoryName?: string
+  laboratoryId?: string
+}
+
 const props = defineProps<{
   task: ScheduleTask
   modelValue: [string, string]
+  laboratories: Laboratory[]
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: [string, string]]
+  'labChange': [labId: number]
 }>()
 
 const dateRange = computed({
@@ -102,6 +129,10 @@ const cronOptions = [
 
 function handleCronSelect(cron: string) {
   props.task.cron = cron
+}
+
+function handleLabChange(labId: number) {
+  emit('labChange', labId)
 }
 </script>
 

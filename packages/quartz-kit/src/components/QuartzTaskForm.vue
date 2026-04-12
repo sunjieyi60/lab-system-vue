@@ -11,6 +11,9 @@
       <TaskBasicCard
         v-model="form.ranges.dateRange"
         :task="form.formData.task"
+        :laboratories="laboratories"
+        :readonly="isViewMode"
+        @lab-change="handleLabChange"
       />
 
       <!-- 时间规则 -->
@@ -25,6 +28,7 @@
         :data-group="form.formData.dataGroup"
         :devices="devices"
         :readonly="isViewMode"
+        :laboratory-id="form.formData.task.laboratoryId"
         @add="handleAddDataSource"
         @remove="form.removeDataSource"
         @update-device="handleUpdateDataSourceDevice"
@@ -120,6 +124,12 @@ import { CommandLine } from '../types/quartz'
 // ============================================
 // Props & Emits
 // ============================================
+interface Laboratory {
+  id: number
+  laboratoryName?: string
+  laboratoryId?: string
+}
+
 const props = withDefaults(defineProps<{
   initialValue?: ScheduleConfigRoot
   mode?: FormMode
@@ -127,6 +137,7 @@ const props = withDefaults(defineProps<{
   devices: Device[]
   users: User[]
   semesters: Semester[]
+  laboratories: Laboratory[]
   loading?: boolean
 }>(), {
   mode: 'create',
@@ -239,6 +250,22 @@ function handleArgsConfirm(args: number[]) {
     form.updateActionArgs(groupIndex, actionIndex, args)
     ElMessage.success('参数已保存')
   }
+}
+
+// ============================================
+// 实验室切换处理
+// ============================================
+function handleLabChange(_labId: number) {
+  // 切换实验室时清空数据源和动作组中的设备选择
+  // 因为不同实验室的设备不同
+  form.formData.dataGroup = []
+  form.formData.actionGroups.forEach(ag => {
+    ag.actions.forEach(a => {
+      a.deviceId = 0
+      a.deviceType = 'AirCondition'
+    })
+  })
+  ElMessage.warning('实验室已切换，请重新选择设备')
 }
 
 // ============================================

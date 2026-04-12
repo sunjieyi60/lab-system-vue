@@ -72,12 +72,12 @@
           <el-table-column prop="airCond" label="空调内机" align="center" min-width="120" />
           <el-table-column prop="switch" label="开关" align="center" min-width="80">
             <template #default="{ row }">
-              <span
-                class="status-tag"
-                :class="row.isOpen ? 'status-open' : 'status-close'"
+              <el-tag
+                :type="row.isOpen ? 'success' : 'danger'"
+                size="large"
               >
                 {{ row.isOpen ? '开' : '关' }}
-              </span>
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="mode" label="模式" align="center" min-width="80" />
@@ -94,9 +94,12 @@
           <el-table-column prop="unit" label="机组" align="center" min-width="80" />
           <el-table-column prop="online" label="在线" align="center" min-width="80">
             <template #default="{ row }">
-              <span class="online-tag" :class="row.online ? 'online' : 'offline'">
+              <el-tag
+                :type="row.online ? 'success' : 'danger'"
+                size="large"
+              >
                 {{ row.online ? "在线" : "离线" }}
-              </span>
+              </el-tag>
             </template>
           </el-table-column>
         </el-table>

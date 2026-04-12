@@ -467,7 +467,7 @@ defineExpose({
 
 .quick-actions {
   display: flex;
-  gap: 12px;
+  gap: 3rem;
   flex-wrap: wrap;
   justify-content: center;
 }

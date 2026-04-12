@@ -84,6 +84,7 @@ const props = defineProps<{
   dataGroup: DataSource[]
   devices: Device[]
   readonly?: boolean
+  laboratoryId?: number
 }>()
 
 const emit = defineEmits<{
@@ -92,9 +93,17 @@ const emit = defineEmits<{
   updateDevice: [index: number, deviceId: number]
 }>()
 
+// 根据实验室过滤设备，并排除已使用的设备
 const availableDevices = computed(() => {
   const usedDeviceIds = new Set(props.dataGroup.map(d => d.deviceId).filter(id => id > 0))
-  return props.devices.filter(d => !usedDeviceIds.has(d.id))
+  let filtered = props.devices.filter(d => !usedDeviceIds.has(d.id))
+  
+  // 如果指定了实验室，只显示该实验室的设备
+  if (props.laboratoryId) {
+    filtered = filtered.filter(d => (d as any).labId === props.laboratoryId)
+  }
+  
+  return filtered
 })
 
 const tagMap: Record<DeviceType, string> = {

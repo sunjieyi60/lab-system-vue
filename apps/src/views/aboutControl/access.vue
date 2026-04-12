@@ -79,12 +79,12 @@
           <el-table-column prop="deviceName" label="房门" align="center" min-width="100" />
           <el-table-column prop="doorStatus" label="房门状态" align="center" min-width="100">
             <template #default="{ row }">
-              <span
-                class="status-tag"
-                :class="row.isOpen ? 'status-open' : 'status-close'"
+              <el-tag
+                :type="row.isOpen ? 'success' : 'danger'"
+                size="large"
               >
                 {{ row.isOpen ? '开' : '关' }}
-              </span>
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="lockStatus" label="门锁状态" align="center" min-width="120">
@@ -99,9 +99,12 @@
           </el-table-column>
           <el-table-column prop="online" label="在线" align="center" min-width="80">
             <template #default="{ row }">
-              <span class="online-tag" :class="row.online ? 'online' : 'offline'">
+              <el-tag
+                :type="row.online ? 'success' : 'danger'"
+                size="large"
+              >
                 {{ row.online ? "在线" : "离线" }}
-              </span>
+              </el-tag>
             </template>
           </el-table-column>
         </el-table>

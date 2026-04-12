@@ -68,6 +68,7 @@
         :devices="mockDevices"
         :users="mockUsers"
         :semesters="mockSemesters"
+        :laboratories="mockLaboratories"
         :loading="submitting"
         @submit="handleSubmit"
         @cancel="handleCancel"
@@ -262,6 +263,13 @@ const mockSemesters: Semester[] = [
   { id: 1, name: '2024-2025学年第一学期' },
   { id: 2, name: '2024-2025学年第二学期' },
   { id: 3, name: '2025-2026学年第一学期' },
+]
+
+// 模拟实验室列表
+const mockLaboratories = [
+  { id: 1, laboratoryName: '实验室101', laboratoryId: '101' },
+  { id: 2, laboratoryName: '实验室102', laboratoryId: '102' },
+  { id: 3, laboratoryName: '实验室103', laboratoryId: '103' },
 ]
 
 function createMockTask(index: number): ScheduleConfigRoot {

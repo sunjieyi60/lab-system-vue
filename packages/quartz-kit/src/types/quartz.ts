@@ -70,6 +70,7 @@ export interface Device {
   type: DeviceType;
   address?: number;
   selfId?: number;
+  labId?: number; // 所属实验室ID，用于过滤
 }
 
 /** 用户信息（用于报警配置） */

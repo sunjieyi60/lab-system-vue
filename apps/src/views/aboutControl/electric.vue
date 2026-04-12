@@ -1,75 +1,19 @@
 <!--电气监控 -->
 <template>
-  <div class="door-control-page">
+  <div class="electric-control-page">
     <div class="main-content">
-      <!-- 第一行 -->
-      <div class="filter-row first-row">
-        <span class="select-label">所在楼栋：</span>
-        <el-select v-model="building" style="width: 120px; margin-right: 20px">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in buildingList"
-            :key="item.id"
-            :label="item.buildingName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <span class="select-label">所属单位：</span>
-        <el-select v-model="unit" style="width: 160px; margin-right: 20px">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in deptList"
-            :key="item.id"
-            :label="item.deptName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <span class="select-label">实验室编号：</span>
-        <el-select
-          v-model="labNo"
-          style="width: 120px; margin-right: 20px"
-          @change="handleLabChange"
-        >
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in filteredLaboratoryList"
-            :key="item.id"
-            :label="item.laboratoryName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <div class="stat">
-          <span>{{ tableData.length }}个设备</span>
-        </div>
-      </div>
-
-      <!-- 第二行部分 -->
-      <div class="filter-row second-row">
-        <div class="button-group left-buttons">
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleRefresh"
-            >手动刷新</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleRemoteControl"
-            >远程控制</el-button
-          >
-
-
+      <!-- 顶部工具栏 -->
+      <div class="toolbar-row">
+        <div class="left-actions">
+          <el-button :loading="isLoading" @click="handleRefresh">手动刷新</el-button>
+          <el-button :loading="isLoading" @click="handleRemoteControl">远程控制</el-button>
         </div>
 
- <div class="button-group right-buttons">
+        <div class="right-actions">
           <el-input
             v-model="searchKey"
             placeholder="请输入关键字"
-            style="width: 180px; margin-right: 10px; flex-shrink: 1"
+            class="search-input"
             @keyup.enter="handleSearch"
           >
             <template #suffix>
@@ -80,32 +24,20 @@
               />
             </template>
           </el-input>
-          <el-dropdown
-            split-button
-            type="primary"
-            @click="handleAdd"
-            style="margin-right: 10px"
-          >
-            添加
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="lab">实验室</el-dropdown-item>
-                <el-dropdown-item command="node">节点</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-button style="width: 90px; margin-right: 10px" @click="handleEdit"
-            >修改</el-button
-          >
-          <el-button
-            style="width: 90px; margin-right: 10px"
-            @click="handleDelete"
-            >删除</el-button
-          >
+          <div class="statistics">
+            <span class="stat-item">
+              <span class="stat-dot black"></span>
+              共 {{ tableData.length }} 个
+            </span>
+            <span class="stat-item">
+              <span class="stat-dot green"></span>
+              合闸 {{ closedCount }} 个
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- 表格盒子 -->
+      <!-- 表格 -->
       <div class="table-box">
         <el-table
           ref="tableRef"
@@ -113,56 +45,76 @@
           stripe
           style="width: 100%"
           :header-cell-style="{
-            background: '#226EE04D',
-            color: '#333',
+            background: '#f5f7fa',
+            color: '#606266',
+            fontWeight: '500',
             height: '48px',
           }"
-          :row-style="{ height: '56px' }"
+          :row-style="{ height: '48px' }"
           @selection-change="handleSelectionChange"
         >
-          <el-table-column type="selection" align="center" />
-          <el-table-column
-            prop="labName"
-            label="实验室"
-            align="center"
-            width="120"
-          >
+          <el-table-column type="selection" width="55" align="center" />
+          <el-table-column prop="deptName" label="单位" align="center" min-width="180">
             <template #default="{ row }">
-              {{ getLabName(row.labId) }}
+              {{ getDeptName(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column prop="deviceName" label="电源空开" align="center" />
-          <el-table-column prop="isOpen" label="空开状态" align="center">
+          <el-table-column prop="buildingName" label="楼栋" align="center" min-width="80">
+            <template #default="{ row }">
+              {{ getBuildingName(row.labId) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="labNo" label="实验室编号" align="center" min-width="100">
+            <template #default="{ row }">
+              {{ getLabNo(row.labId) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="deviceName" label="电源空开" align="center" min-width="100" />
+          <el-table-column prop="isOpen" label="空开状态" align="center" min-width="90">
             <template #default="{ row }">
               <el-tag
                 :type="row.isOpen ? 'success' : 'danger'"
-                size="small"
+                size="big"
               >
-                {{ row.isOpen ? '通电' : '断电' }}
+                {{ row.isOpen ? '合闸' : '分闸' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="energy" label="电能" align="center" />
-          <el-table-column prop="power" label="功率(Kw)" align="center" />
-          <el-table-column prop="voltage" label="电压(V)" align="center" />
-          <el-table-column prop="current" label="电流(A)" align="center" />
-          <el-table-column
-            prop="leakageCurrent"
-            label="漏电流(A)"
-            align="center"
-          />
-          <el-table-column prop="lineTemp" label="线温(℃)" align="center" />
-          <el-table-column prop="online" label="在线" align="center">
+          <el-table-column prop="energy" label="电能(Kwh)" align="center" min-width="90" />
+          <el-table-column prop="power" label="功率(Kw)" align="center" min-width="90" />
+          <el-table-column prop="voltage" label="电压(V)" align="center" min-width="80" />
+          <el-table-column prop="current" label="电流(A)" align="center" min-width="80" />
+          <el-table-column prop="leakage" label="漏电流(A)" align="center" min-width="90" />
+          <el-table-column prop="temperature" label="线温(℃)" align="center" min-width="80" />
+          <el-table-column prop="online" label="在线" align="center" min-width="70">
             <template #default="{ row }">
-              <el-tag :type="row.online ? 'success' : 'info'" size="small">
-                {{ row.online ? "在线" : "掉线" }}
+              <el-tag
+                :type="row.online ? 'success' : 'danger'"
+                size="large"
+              >
+                {{ row.online ? "在线" : "离线" }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
       </div>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <span class="total-text">共{{ tableData.length }}条</span>
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </div>
   </div>
+
   <!-- 远程控制弹窗 - 使用 CircuitBreakControl 组件 -->
   <el-dialog
     v-model="showRemote"
@@ -225,6 +177,7 @@
       />
     </div>
   </el-dialog>
+  
   <AddNode
     v-model="showAddNode"
     device-type="CircuitBreak"
@@ -240,15 +193,13 @@ import { useUserStore } from "@/stores/user.js";
 import { useDeviceStore, DeviceType } from "@/stores/device.js";
 import { controlDevice } from "@/api/device.js";
 import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
+
 // 引入 control-kit 组件
 import CircuitBreakControl from "@packages/control-kit/src/components/controls/CircuitBreakControl.vue";
 
 const userStore = useUserStore();
 const deviceStore = useDeviceStore();
 
-const unit = ref("all");
-const building = ref("all");
-const labNo = ref("all");
 const searchKey = ref("");
 const tableRef = ref();
 const circuitBreakControlRef = ref();
@@ -260,64 +211,54 @@ const total = ref(0);
 // 选中的行数据
 const selectedRows = ref([]);
 
-// 弹窗显示状态
-const showRemote = ref(false);
-const showAddNode = ref(false);
-
 // 保存选中的行数据（用于传给弹窗）
 const currentSelectedRows = ref([]);
 
 // 批量控制设备列表展开状态
 const showDeviceList = ref(false);
 
-// 计算属性：表格数据（根据选择的实验室筛选）
+// 弹窗显示状态
+const showRemote = ref(false);
+const showAddNode = ref(false);
+
+// 计算属性：表格数据（使用字符串拼接搜索）
 const tableData = computed(() => {
-  // 先获取所有断路器数据（电气监控对应断路器类型）
   let data = deviceStore.getCircuitBreakTableData || [];
 
-  // 如果选择了楼栋，按楼栋筛选
-  if (building.value && building.value !== 'all') {
-    // 获取该楼栋下的所有实验室ID
-    const labIdsInBuilding = laboratoryList.value
-      .filter(lab => String(lab.belongToBuilding) === String(building.value))
-      .map(lab => String(lab.id));
-    data = data.filter((item) => labIdsInBuilding.includes(String(item.labId)));
-  }
-
-  // 如果选择了单位，按单位筛选
-  if (unit.value && unit.value !== 'all') {
-    // 获取该单位下的所有实验室ID
-    const labIdsInUnit = laboratoryList.value
-      .filter(lab => {
-        const depts = lab.belongToDepts || [];
-        return depts.map(String).includes(String(unit.value));
-      })
-      .map(lab => String(lab.id));
-    data = data.filter((item) => labIdsInUnit.includes(String(item.labId)));
-  }
-
-  // 如果选择了具体实验室，按实验室ID筛选
-  if (labNo.value !== "all") {
-    data = data.filter((item) => String(item.labId) === String(labNo.value));
-  }
-
-  // 如果有搜索关键字，再按关键字筛选
+  // 如果有搜索关键字，按关键字筛选
   if (searchKey.value.trim()) {
     const k = searchKey.value.trim().toLowerCase();
-    data = data.filter((item) =>
-      Object.values(item).some((val) => String(val).toLowerCase().includes(k)),
-    );
+    data = data.filter((item) => {
+      // 将关键属性拼接为字符串，使用 "-" 作为分隔符
+      const searchStr = [
+        getDeptName(item.labId),
+        getBuildingName(item.labId),
+        getLabNo(item.labId),
+        item.deviceName,
+        item.isOpen ? '合闸' : '分闸',
+        item.energy,
+        item.power,
+        item.voltage,
+        item.current,
+        item.leakage,
+        item.temperature,
+        item.online ? '在线' : '离线'
+      ].join('-').toLowerCase();
+      return searchStr.includes(k);
+    });
   }
 
-  // 映射字段名以匹配表格列，并补充控制参数
+  // 映射字段并补充控制参数
   return data.map((item) => ({
     ...item,
-    // 映射字段名
-    leakageCurrent: item.leakage, // store: leakage -> 组件: leakageCurrent
-    lineTemp: item.temperature, // store: temperature -> 组件: lineTemp
     // 显式添加控制参数到顶层，方便子组件获取
     address: item.rawRecord?.address || item.address,
   }));
+});
+
+// 合闸数量统计
+const closedCount = computed(() => {
+  return tableData.value.filter((item) => item.isOpen).length;
 });
 
 // 获取实验室名称
@@ -326,118 +267,34 @@ const getLabName = (labId) => {
   return lab?.laboratoryName || lab?.laboratoryId || labId || "-";
 };
 
+// 获取单位名称
+const getDeptName = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  if (!lab) return "-";
+  const depts = lab.belongToDepts || [];
+  if (depts.length === 0) return "-";
+  const dept = deptList.value.find(d => depts.includes(d.id) || depts.includes(String(d.id)));
+  return dept?.deptName || "-";
+};
+
+// 获取楼栋名称
+const getBuildingName = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  if (!lab) return "-";
+  const building = buildingList.value.find(b => b.id === lab.belongToBuilding || String(b.id) === String(lab.belongToBuilding));
+  return building?.buildingName || "-";
+};
+
+// 获取实验室编号
+const getLabNo = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  return lab?.laboratoryId || lab?.laboratoryName || labId || "-";
+};
+
 const buildingList = computed(() => userStore.getBuildingList);
 const rawDeptData = computed(() => userStore.userInfo.depts || []);
 const deptList = computed(() => rawDeptData.value.map((item) => item.dept));
 const laboratoryList = computed(() => userStore.getLaboratoryList);
-
-// 过滤后的实验室列表
-const filteredLaboratoryList = computed(() => {
-  let result = laboratoryList.value;
-  
-  // 按楼栋过滤
-  if (building.value && building.value !== 'all') {
-    result = result.filter((room) => String(room.belongToBuilding) === String(building.value));
-  }
-  
-  // 按单位过滤 - belongToDepts是数组
-  if (unit.value && unit.value !== 'all') {
-    result = result.filter((room) => {
-      const depts = room.belongToDepts || [];
-      return depts.map(String).includes(String(unit.value));
-    });
-  }
-  
-  return result;
-});
-
-// 表格选择变化处理
-const handleSelectionChange = (selection) => {
-  // 补充 labName 到选中行数据
-  selectedRows.value = selection.map((row) => ({
-    ...row,
-    labName: getLabName(row.labId), // 补充实验室名称
-  }));
-
-  console.log("【选中行数据】", selectedRows.value);
-};
-
-// 实验室下拉框变化处理
-const handleLabChange = (val) => {
-  console.log("【实验室选择变化】选中值:", val);
-  console.log("【实验室选择变化】当前表格数据:", tableData.value);
-};
-
-// 加载所有设备数据（获取所有实验室的ID传给接口）
-const loadAllDeviceData = async () => {
-  isLoading.value = true;
-  try {
-    // 从 laboratoryList 获取所有实验室ID
-    const allLabIds = laboratoryList.value
-      .map((item) => item.id)
-      .filter((id) => id);
-
-    console.log("【加载所有设备】实验室ID列表:", allLabIds);
-
-    // 把所有实验室ID传给接口，使用断路器类型（电气监控）
-    await deviceStore.fetchDevicesByType(DeviceType.CIRCUIT_BREAK, allLabIds);
-
-    console.log("【加载所有设备完成】");
-    console.log("【检查】deviceStore.deviceMap:", deviceStore.deviceMap);
-    console.log(
-      "【检查】所有断路器数据:",
-      deviceStore.getCircuitBreakTableData,
-    );
-  } catch (error) {
-    console.error("【加载设备失败】", error);
-    ElMessage.error("加载设备数据失败");
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// 手动刷新
-const handleRefresh = async () => {
-  await loadAllDeviceData();
-  ElMessage.success("刷新成功");
-};
-
-// 远程控制 - 打开弹窗
-const handleRemoteControl = () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning("请至少选择一条记录");
-    return;
-  }
-  // 保存当前选中的行数据
-  const rawData = deviceStore.getCircuitBreakTableData;
-  currentSelectedRows.value = selectedRows.value.map((selectRow) => {
-    return rawData.find((rawRow) => rawRow.id === selectRow.id) || selectRow;
-  });
-  showRemote.value = true;
-  
-  // 根据设备状态设置控制组件的初始状态
-  nextTick(() => {
-    if (circuitBreakControlRef.value && currentSelectedRows.value.length === 1) {
-      const device = currentSelectedRows.value[0];
-      // isOpen: true 表示合闸（闭合），对应 isClosed: true
-      const isClosed = device.isOpen;
-      circuitBreakControlRef.value.setStatus(isClosed);
-    }
-  });
-};
-
-const handleAdd = () => {
-  showAddNode.value = true;
-};
-
-const handleEdit = () => {
-  const selection = tableRef.value?.getSelectionRows?.() || [];
-  if (selection.length !== 1) {
-    ElMessage.warning("请选择一条要修改的记录");
-    return;
-  }
-  console.log("编辑记录：", selection[0]);
-};
 
 // 断路器控制配置
 const circuitBreakControlConfig = {
@@ -503,6 +360,80 @@ const selectedCircuitBreakDevices = computed(() => {
   }));
 });
 
+// 表格选择变化处理
+const handleSelectionChange = (selection) => {
+  // 补充 labName 到选中行数据
+  selectedRows.value = selection.map((row) => ({
+    ...row,
+    labName: getLabName(row.labId),
+  }));
+
+  console.log("【选中行数据】", selectedRows.value);
+};
+
+// 加载所有设备数据（获取所有实验室的ID传给接口）
+const loadAllDeviceData = async () => {
+  isLoading.value = true;
+  try {
+    // 从 laboratoryList 获取所有实验室ID
+    const allLabIds = laboratoryList.value
+      .map((item) => item.id)
+      .filter((id) => id);
+
+    console.log("【加载所有设备】实验室ID列表:", allLabIds);
+
+    // 把所有实验室ID传给接口，使用断路器类型（电气监控）
+    await deviceStore.fetchDevicesByType(DeviceType.CIRCUIT_BREAK, allLabIds);
+
+    console.log("【加载所有设备完成】");
+    console.log("【检查】deviceStore.deviceMap:", deviceStore.deviceMap);
+    console.log("【检查】所有断路器数据:", deviceStore.getCircuitBreakTableData);
+  } catch (error) {
+    console.error("【加载设备失败】", error);
+    ElMessage.error("加载设备数据失败");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 手动刷新
+const handleRefresh = async () => {
+  await loadAllDeviceData();
+  ElMessage.success("刷新成功");
+};
+
+// 远程控制 - 打开弹窗
+const handleRemoteControl = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning("请至少选择一条记录");
+    return;
+  }
+  // 保存当前选中的行数据
+  const rawData = deviceStore.getCircuitBreakTableData;
+  currentSelectedRows.value = selectedRows.value.map((selectRow) => {
+    return rawData.find((rawRow) => rawRow.id === selectRow.id) || selectRow;
+  });
+  showRemote.value = true;
+};
+
+// 弹窗打开时设置初始状态
+const handleDialogOpen = () => {
+  nextTick(() => {
+    if (circuitBreakControlRef.value && currentSelectedRows.value.length === 1) {
+      const device = currentSelectedRows.value[0];
+      // isOpen: true 表示合闸（闭合），对应 isClosed: true
+      const isClosed = device.isOpen;
+      console.log('【设置断路器状态】isClosed:', isClosed, 'isOpen:', device.isOpen);
+      circuitBreakControlRef.value.setStatus(isClosed);
+    }
+  });
+};
+
+// 弹窗关闭时清理数据
+const handleDialogClosed = () => {
+  currentSelectedRows.value = [];
+};
+
 /**
  * 处理单设备控制命令执行
  * @param {Task[]} tasks - 任务列表
@@ -559,6 +490,19 @@ const handleBatchControlExecute = async (tasks, callback) => {
   }
 };
 
+const handleAdd = () => {
+  showAddNode.value = true;
+};
+
+const handleEdit = () => {
+  const selection = tableRef.value?.getSelectionRows?.() || [];
+  if (selection.length !== 1) {
+    ElMessage.warning("请选择一条要修改的记录");
+    return;
+  }
+  console.log("编辑记录：", selection[0]);
+};
+
 const handleDelete = () => {
   const selection = tableRef.value?.getSelectionRows?.() || [];
   if (!selection.length) {
@@ -577,20 +521,21 @@ const handleDelete = () => {
 
 const handleSearch = () => {
   console.log("【搜索】关键字:", searchKey.value);
-  console.log("【搜索】结果:", tableData.value);
+};
+
+// 分页大小变化
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+};
+
+// 页码变化
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
 };
 
 onMounted(async () => {
   // 先尝试从 localStorage 恢复用户信息
   await userStore.refreshUserInfo();
-
-  // 等待实验室列表加载完成（如果需要）
-  // 确保 laboratoryList 有数据
-  if (!laboratoryList.value || laboratoryList.value.length === 0) {
-    console.log("【警告】实验室列表为空，尝试重新获取...");
-    // 如果有刷新实验室列表的方法，这里调用
-    // await userStore.refreshLaboratories();
-  }
 
   // 设置当前设备类型为断路器（电气监控）
   deviceStore.setDeviceType(DeviceType.CIRCUIT_BREAK);
@@ -605,20 +550,16 @@ onMounted(async () => {
     "【检查】实验室ID列表:",
     laboratoryList.value.map((item) => item.id),
   );
-  console.log("【检查】当前选中实验室:", labNo.value);
   console.log("【检查】deviceStore.deviceMap:", deviceStore.deviceMap);
   console.log("【检查】所有断路器数据:", deviceStore.getCircuitBreakTableData);
-  console.log("【检查】当前表格数据:", tableData.value);
-  console.log("【检查】表格数据条数:", tableData.value.length);
   console.log("========================================");
 });
 </script>
 
 <style scoped>
-.door-control-page {
-  padding-top: 6px;
-  background: #fafbfc;
-  min-height: 85vh;
+.electric-control-page {
+  padding: 16px;
+  background: #f5f7fa;
   box-sizing: border-box;
 }
 
@@ -628,76 +569,118 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.filter-row {
+/* ---------------- 工具栏 ---------------- */
+.toolbar-row {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  padding: 0 16px;
+  justify-content: space-between;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
 }
 
-.filter-row.first-row {
-  background: #f4f7fd;
-  padding: 12px;
-  border-radius: 8px;
-  height: 26px;
-  font-size: 15px;
-}
-
-.filter-row.second-row {
-  padding: 0 0 0 8px;
-}
-
-.stat {
-  margin-left: auto;
+.left-actions {
   display: flex;
-  flex-direction: column;
+  gap: 12px;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-input {
+  width: 220px;
+}
+
+.statistics {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
-  line-height: 1.8;
+  color: #606266;
+}
+
+.stat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.stat-dot.black {
+  background-color: #303133;
+}
+
+.stat-dot.green {
+  background-color: #67c23a;
 }
 
 /* ---------------- 表格 ---------------- */
 .table-box {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  flex: 1;
-  overflow-x: auto;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 :deep(.el-table--striped .el-table__row--striped td.el-table__cell) {
-  background-color: #226ee00d !important;
+  background-color: #fafafa;
 }
 
-.button-group {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
+:deep(.el-table th.el-table__cell) {
+  background-color: #f5f7fa !important;
 }
 
-.button-group.right-buttons {
-  margin-left: auto;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-}
 
-.pagination-box {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 12px 20px;
+
+/* ---------------- 分页 ---------------- */
+.pagination-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 16px;
+  background: #fff;
+  padding: 12px 20px;
+  border-radius: 4px;
 }
 
-:deep(.el-button:focus) {
-  outline: none;
-  box-shadow: none;
+.total-text {
+  font-size: 14px;
+  color: #606266;
 }
 
-:deep(.el-table) {
-  font-size: 13px;
+:deep(.el-pagination .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination .el-select .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination button) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+:deep(.el-pagination .el-pager li) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-weight: normal;
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background-color: #409eff;
+  color: #fff;
+  border-color: #409eff;
 }
 
 /* ---------------- 弹窗样式 ---------------- */

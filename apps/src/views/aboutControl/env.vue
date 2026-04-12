@@ -2,67 +2,17 @@
 <template>
   <div class="env-monitor-page">
     <div class="main-content">
-      <!-- 第一行 -->
-      <div class="filter-row first-row">
-        <span class="select-label">所在楼栋：</span>
-        <el-select v-model="building" style="width: 120px; margin-right: 20px">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in buildingList"
-            :key="item.id"
-            :label="item.buildingName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <span class="select-label">所属单位：</span>
-        <el-select v-model="unit" style="width: 160px; margin-right: 20px">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in deptList"
-            :key="item.id"
-            :label="item.deptName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <span class="select-label">实验室编号：</span>
-        <el-select
-          v-model="labNo"
-          style="width: 120px; margin-right: 20px"
-          @change="handleLabChange"
-        >
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in filteredLaboratoryList"
-            :key="item.id"
-            :label="item.laboratoryName"
-            :value="item.id"
-          />
-        </el-select>
-
-        <div class="stat">
-          <span>{{ tableData.length }}个传感器</span>
-        </div>
-      </div>
-
-      <!-- 第二行部分 -->
-      <div class="filter-row second-row">
-        <div class="button-group left-buttons">
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleRefresh"
-            >手动刷新</el-button
-          >
-
+      <!-- 顶部工具栏 -->
+      <div class="toolbar-row">
+        <div class="left-actions">
+          <el-button :loading="isLoading" @click="handleRefresh">手动刷新</el-button>
         </div>
 
- <div class="button-group right-buttons">
+        <div class="right-actions">
           <el-input
             v-model="searchKey"
             placeholder="请输入关键字"
-            style="width: 180px; margin-right: 10px; flex-shrink: 1"
+            class="search-input"
             @keyup.enter="handleSearch"
           >
             <template #suffix>
@@ -73,32 +23,16 @@
               />
             </template>
           </el-input>
-          <el-dropdown
-            split-button
-            type="primary"
-            @click="handleAdd"
-            style="margin-right: 10px"
-          >
-            添加
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="lab">实验室</el-dropdown-item>
-                <el-dropdown-item command="node">节点</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-button style="width: 90px; margin-right: 10px" @click="handleEdit"
-            >修改</el-button
-          >
-          <el-button
-            style="width: 90px; margin-right: 10px"
-            @click="handleDelete"
-            >删除</el-button
-          >
+          <div class="statistics">
+            <span class="stat-item">
+              <span class="stat-dot black"></span>
+              共 {{ tableData.length }} 个
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- 表格盒子 -->
+      <!-- 表格 -->
       <div class="table-box">
         <el-table
           ref="tableRef"
@@ -106,34 +40,64 @@
           stripe
           style="width: 100%"
           :header-cell-style="{
-            background: '#226EE04D',
-            color: '#333',
+            background: '#f5f7fa',
+            color: '#606266',
+            fontWeight: '500',
             height: '48px',
           }"
-          :row-style="{ height: '56px' }"
+          :row-style="{ height: '48px' }"
+          @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column prop="labName" label="实验室" align="center">
+          <el-table-column prop="deptName" label="单位" align="center" min-width="180">
             <template #default="{ row }">
-              {{ getLabName(row.labId) }}
+              {{ getDeptName(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column prop="deviceName" label="传感器" align="center" />
-          <el-table-column prop="temperature" label="温度(℃)" align="center" />
-          <el-table-column prop="humidity" label="湿度(%)" align="center" />
-          <el-table-column prop="light" label="亮度(Lux)" align="center" />
-          <el-table-column prop="smoke" label="烟雾" align="center" />
-          <el-table-column prop="online" label="在线" align="center">
+          <el-table-column prop="buildingName" label="楼栋" align="center" min-width="80">
             <template #default="{ row }">
-              <el-tag :type="row.online ? 'success' : 'info'" size="small">
-                {{ row.online ? "在线" : "掉线" }}
+              {{ getBuildingName(row.labId) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="labNo" label="实验室编号" align="center" min-width="100">
+            <template #default="{ row }">
+              {{ getLabNo(row.labId) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="deviceName" label="环境采集器" align="center" min-width="120" />
+          <el-table-column prop="temperature" label="温度(℃)" align="center" min-width="90" />
+          <el-table-column prop="humidity" label="湿度(%)" align="center" min-width="80" />
+          <el-table-column prop="light" label="亮度(Lux)" align="center" min-width="100" />
+          <el-table-column prop="smoke" label="烟雾浓度" align="center" min-width="90" />
+          <el-table-column prop="online" label="在线" align="center" min-width="70">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.online ? 'success' : 'danger'"
+                size="large"
+              >
+                {{ row.online ? "在线" : "离线" }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
       </div>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <span class="total-text">共{{ tableData.length }}条</span>
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </div>
   </div>
+  
   <AddNode
     v-model="showAddNode"
     device-type="Sensor"
@@ -152,9 +116,6 @@ import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
 const userStore = useUserStore();
 const deviceStore = useDeviceStore();
 
-const unit = ref("all");
-const building = ref("all");
-const labNo = ref("all");
 const searchKey = ref("");
 const tableRef = ref();
 const isLoading = ref(false);
@@ -163,43 +124,28 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 计算属性：表格数据（根据选择的实验室筛选）
+// 计算属性：表格数据（使用字符串拼接搜索）
 const tableData = computed(() => {
-  // 先获取所有传感器数据
-  let data = deviceStore.getSensorTableData;
+  let data = deviceStore.getSensorTableData || [];
 
-  // 如果选择了楼栋，按楼栋筛选
-  if (building.value && building.value !== 'all') {
-    // 获取该楼栋下的所有实验室ID
-    const labIdsInBuilding = laboratoryList.value
-      .filter(lab => String(lab.belongToBuilding) === String(building.value))
-      .map(lab => String(lab.id));
-    data = data.filter((item) => labIdsInBuilding.includes(String(item.labId)));
-  }
-
-  // 如果选择了单位，按单位筛选
-  if (unit.value && unit.value !== 'all') {
-    // 获取该单位下的所有实验室ID
-    const labIdsInUnit = laboratoryList.value
-      .filter(lab => {
-        const depts = lab.belongToDepts || [];
-        return depts.map(String).includes(String(unit.value));
-      })
-      .map(lab => String(lab.id));
-    data = data.filter((item) => labIdsInUnit.includes(String(item.labId)));
-  }
-
-  // 如果选择了具体实验室，按实验室ID筛选
-  if (labNo.value !== "all") {
-    data = data.filter((item) => String(item.labId) === String(labNo.value));
-  }
-
-  // 如果有搜索关键字，再按关键字筛选
+  // 如果有搜索关键字，按关键字筛选
   if (searchKey.value.trim()) {
     const k = searchKey.value.trim().toLowerCase();
-    data = data.filter((item) =>
-      Object.values(item).some((val) => String(val).toLowerCase().includes(k)),
-    );
+    data = data.filter((item) => {
+      // 将关键属性拼接为字符串，使用 "-" 作为分隔符
+      const searchStr = [
+        getDeptName(item.labId),
+        getBuildingName(item.labId),
+        getLabNo(item.labId),
+        item.deviceName,
+        item.temperature,
+        item.humidity,
+        item.light,
+        item.smoke,
+        item.online ? '在线' : '离线'
+      ].join('-').toLowerCase();
+      return searchStr.includes(k);
+    });
   }
 
   return data;
@@ -211,35 +157,38 @@ const getLabName = (labId) => {
   return lab?.laboratoryName || lab?.laboratoryId || labId || "-";
 };
 
+// 获取单位名称
+const getDeptName = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  if (!lab) return "-";
+  const depts = lab.belongToDepts || [];
+  if (depts.length === 0) return "-";
+  const dept = deptList.value.find(d => depts.includes(d.id) || depts.includes(String(d.id)));
+  return dept?.deptName || "-";
+};
+
+// 获取楼栋名称
+const getBuildingName = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  if (!lab) return "-";
+  const building = buildingList.value.find(b => b.id === lab.belongToBuilding || String(b.id) === String(lab.belongToBuilding));
+  return building?.buildingName || "-";
+};
+
+// 获取实验室编号
+const getLabNo = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  return lab?.laboratoryId || lab?.laboratoryName || labId || "-";
+};
+
 const buildingList = computed(() => userStore.getBuildingList);
 const rawDeptData = computed(() => userStore.userInfo.depts || []);
 const deptList = computed(() => rawDeptData.value.map((item) => item.dept));
 const laboratoryList = computed(() => userStore.getLaboratoryList);
 
-// 过滤后的实验室列表
-const filteredLaboratoryList = computed(() => {
-  let result = laboratoryList.value;
-  
-  // 按楼栋过滤
-  if (building.value && building.value !== 'all') {
-    result = result.filter((room) => String(room.belongToBuilding) === String(building.value));
-  }
-  
-  // 按单位过滤 - belongToDepts是数组
-  if (unit.value && unit.value !== 'all') {
-    result = result.filter((room) => {
-      const depts = room.belongToDepts || [];
-      return depts.map(String).includes(String(unit.value));
-    });
-  }
-  
-  return result;
-});
-
-// 实验室下拉框变化处理
-const handleLabChange = (val) => {
-  console.log("【实验室选择变化】选中值:", val);
-  console.log("【实验室选择变化】当前表格数据:", tableData.value);
+// 表格选择变化处理
+const handleSelectionChange = (selection) => {
+  console.log("【选中行数据】", selection);
 };
 
 // 加载所有设备数据（获取所有实验室的ID传给接口）
@@ -304,20 +253,21 @@ const handleDelete = () => {
 
 const handleSearch = () => {
   console.log("【搜索】关键字:", searchKey.value);
-  console.log("【搜索】结果:", tableData.value);
+};
+
+// 分页大小变化
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+};
+
+// 页码变化
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
 };
 
 onMounted(async () => {
   // 先尝试从 localStorage 恢复用户信息
   await userStore.refreshUserInfo();
-
-  // 等待实验室列表加载完成（如果需要）
-  // 确保 laboratoryList 有数据
-  if (!laboratoryList.value || laboratoryList.value.length === 0) {
-    console.log("【警告】实验室列表为空，尝试重新获取...");
-    // 如果有刷新实验室列表的方法，这里调用
-    // await userStore.refreshLaboratories();
-  }
 
   // 设置当前设备类型为传感器
   deviceStore.setDeviceType(DeviceType.SENSOR);
@@ -332,9 +282,6 @@ onMounted(async () => {
     "【检查】实验室ID列表:",
     laboratoryList.value.map((item) => item.id),
   );
-  console.log("【检查】当前选中实验室:", labNo.value);
-  console.log("【检查】deviceStore.deviceMap:", deviceStore.deviceMap);
-  console.log("【检查】所有传感器数据:", deviceStore.getSensorTableData);
   console.log("【检查】当前表格数据:", tableData.value);
   console.log("【检查】表格数据条数:", tableData.value.length);
   console.log("========================================");
@@ -343,9 +290,9 @@ onMounted(async () => {
 
 <style scoped>
 .env-monitor-page {
-  padding-top: 6px;
-  background: #fafbfc;
-  min-height: 85vh;
+  padding: 16px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 120px);
   box-sizing: border-box;
 }
 
@@ -355,91 +302,113 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.filter-row {
+/* ---------------- 工具栏 ---------------- */
+.toolbar-row {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  padding: 0 16px;
+  justify-content: space-between;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
 }
 
-.filter-row.first-row {
-  background: #f4f7fd;
-  padding: 12px;
-  border-radius: 8px;
-  height: 26px;
-  font-size: 15px;
-}
-
-.filter-row.second-row {
-  padding: 0 0 0 8px;
-}
-
-.stat {
-  margin-left: auto;
+.left-actions {
   display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  line-height: 1.8;
+  gap: 12px;
 }
 
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-input {
+  width: 220px;
+}
+
+.statistics {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.stat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.stat-dot.black {
+  background-color: #303133;
+}
+
+/* ---------------- 表格 ---------------- */
 .table-box {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  flex: 1;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 :deep(.el-table--striped .el-table__row--striped td.el-table__cell) {
-  background-color: #226ee00d !important;
+  background-color: #fafafa;
 }
 
-.button-group {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
+:deep(.el-table th.el-table__cell) {
+  background-color: #f5f7fa !important;
 }
 
-.button-group.right-buttons {
-  margin-left: auto;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-}
 
-.pagination-box {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 12px 20px;
+
+/* ---------------- 分页 ---------------- */
+.pagination-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 16px;
+  background: #fff;
+  padding: 12px 20px;
+  border-radius: 4px;
 }
 
-.filter-panel :deep(.el-button) {
-  border-radius: 6px;
-  padding: 6px 14px;
+.total-text {
   font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-  color: #777;
-  background: #fafafa;
-  border: 1px solid #b5d4e6;
+  color: #606266;
 }
 
-.filter-panel :deep(.el-button:hover) {
-  background: #669ffc;
-  border-color: #4b87e6;
+:deep(.el-pagination .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination .el-select .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination button) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+:deep(.el-pagination .el-pager li) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-weight: normal;
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background-color: #409eff;
   color: #fff;
-}
-
-.filter-panel :deep(.el-button:active) {
-  background: #1a5bb8;
-  border-color: #1a5bb8;
-}
-
-.filter-panel :deep(.el-button:focus) {
-  outline: none;
-  box-shadow: none;
+  border-color: #409eff;
 }
 </style>

@@ -143,7 +143,7 @@ const SPEED_MAP = {
 | 长关保持 | `CLOSE_ACCESS_PERSIST_KEEP` | `[address]` | 保持当前状态 |
 | 保持锁定 | `KEEP_ACCESS_STATUS_LOCK` | `[address]` | 锁定当前状态 |
 | 保持解锁 | `KEEP_ACCESS_STATUS_UNLOCK` | `[address]` | 解锁当前状态 |
-| 延时设定 | `SET_ACCESS_DELAY` | `[address, 0, delay]` | 设置延时时间(秒) |
+| 延时设定 | `SET_ACCESS_DELAY` | `[address, delay]` | 设置延时时间(秒) |
 
 ### 照明控制 (Light)
 

@@ -23,7 +23,7 @@
           @click="handlePowerOff"
         >
           <span v-if="loading && activeCommand === 'powerOff'" class="spinner"></span>
-          <span v-else>⭕</span>
+          <span v-else>&#9899;</span>
           {{ powerOffText }}
         </button>
         <button 
@@ -516,8 +516,10 @@ defineExpose({
 
 .quick-actions {
   display: flex;
-  gap: 12px;
+  gap: 2rem;
   flex-wrap: wrap;
+  margin-bottom: 12px;
+  justify-content: center;
 }
 
 .btn {
@@ -525,10 +527,10 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 8px 2rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;

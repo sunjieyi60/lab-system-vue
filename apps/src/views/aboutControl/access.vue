@@ -245,7 +245,7 @@ const remoteControlConfig = {
   showSingleControl: true,
   showOpenButton: true,
   showCloseButton: true,
-  showQueryStatus: true,
+  showQueryStatus: false,
   showPersistControl: true,
   showStateSelector: true,
   showLockSelector: true,

@@ -28,6 +28,17 @@
           <span v-else>{{ closeIcon }}</span>
           {{ closeButtonText }}
         </button>
+        <button 
+          v-if="showQueryStatus"
+          class="btn btn-info"
+          :class="{ 'btn-large': largeButtons }"
+          :disabled="loading || deviceList[0].isLock"
+          @click="handleQueryStatus"
+        >
+          <span v-if="loading && activeCommand === 'queryStatus'" class="spinner"></span>
+          <span v-else>📊</span>
+          {{ queryStatusText }}
+        </button>
       </div>
     </div>
 
@@ -374,6 +385,18 @@ const handleClose = () => {
   }));
   
   emitExecute(tasks, 'close');
+};
+
+// 查询状态 - 返回单个 Task
+const handleQueryStatus = () => {
+
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
+    commandLine: ACCESS_COMMANDS.REQUEST_DATA,
+    args: [device.address],
+  }));
+  
+  emitExecute(tasks, 'queryStatus');
 };
 
 // ========== 持续状态控制（合并发送）==========

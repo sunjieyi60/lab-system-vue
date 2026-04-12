@@ -58,3 +58,17 @@ export function getRS485GatewayList() {
     method: "get",
   });
 }
+
+// 获取实验室下的所有设备（新接口）
+export function getDeviceListByLab(laboratoryId) {
+  return service({
+    url: "/device/list/all",
+    method: "post",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    data: {
+      laboratoryId,
+    },
+  });
+}

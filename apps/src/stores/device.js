@@ -1,6 +1,6 @@
 // src/stores/device.js
 import { defineStore } from "pinia";
-import { getDeviceList, getRS485GatewayList } from "@/api/device";
+import { getDeviceList, getRS485GatewayList, getDeviceListByLab } from "@/api/device";
 import { ElMessage } from "element-plus";
 
 // 设备类型常量
@@ -454,6 +454,30 @@ export const useDeviceStore = defineStore("device", {
     /* ---- 清空RS485网关数据 ---- */
     clearRS485Gateways() {
       this.rs485GatewayMap = {};
+    },
+
+    /* ---- 获取实验室下的所有设备（新接口 /device/list/all）---- */
+    async fetchDevicesByLabId(laboratoryId) {
+      this.loading = true;
+      try {
+        const res = await getDeviceListByLab(laboratoryId);
+        const deviceList = res.data.data || [];
+        return deviceList.map(item => ({
+          id: item.id,
+          name: item.deviceName,
+          type: item.deviceType,
+          address: item.address,
+          selfId: item.selfId,
+          labId: item.belongToLaboratoryId,
+          rs485GatewayId: item.rs485GatewayId,
+          isLock: item.isLock,
+        }));
+      } catch (error) {
+        ElMessage.error("获取实验室设备列表失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
   },
 });

@@ -14,7 +14,7 @@
         <QuartzTaskForm
           v-if="formDialogVisible"
           :mode="formMode"
-          :laboratory-id="currentLabId"
+          :laboratory-id="selectedLabId"
           :devices="availableDevices"
           :users="availableUsers"
           :semesters="availableSemesters"
@@ -23,6 +23,7 @@
           :loading="formLoading"
           @submit="handleFormSubmit"
           @cancel="handleFormCancel"
+          @lab-change="handleLabChange"
         />
       </el-dialog>
 
@@ -138,12 +139,14 @@ import { Search } from "@element-plus/icons-vue";
 import { useUserStore } from "@/stores/user.js";
 import { useSmartControlStore } from "@/stores/smartControl";
 import { useDeviceStore } from "@/stores/device";
+import { useEduStore } from "@/stores/edu.js";
 import { createQuartz, deleteQuartz, enableQuartz, cancelQuartz } from "@/api/smartControl.js";
 import QuartzTaskForm from "@packages/quartz-kit/src/components/QuartzTaskForm.vue";
 
 const userStore = useUserStore();
 const smartControlStore = useSmartControlStore();
 const deviceStore = useDeviceStore();
+const eduStore = useEduStore();
 
 // 查询条件
 const searchKey = ref("");
@@ -161,7 +164,13 @@ const formMode = ref("create");
 const formLoading = ref(false);
 const currentEditData = ref(null);
 
-// 当前实验室ID
+// 当前选中的实验室ID（用于表单）
+const selectedLabId = ref(0);
+
+// 可用设备列表（从新的接口获取）
+const availableDevices = ref([]);
+
+// 当前实验室ID（从store获取默认）
 const currentLabId = computed(() => {
   const labs = userStore.getLaboratoryList;
   return labs.length > 0 ? labs[0].id : 0;
@@ -185,27 +194,23 @@ const availableLaboratories = computed(() => {
   }));
 });
 
-// 可用设备列表
-const availableDevices = computed(() => {
-  const devices = [];
-  const allDevices = deviceStore.getAllDevices;
-  
-  allDevices.forEach((item) => {
-    const device = item.device || {};
-    const record = item.deviceRecord?.data || {};
-    
-    devices.push({
-      id: device.id || item.deviceId,
-      name: device.deviceName || `设备${device.id}`,
-      type: device.deviceType,
-      address: record.address,
-      selfId: record.selfId,
-      labId: device.belongToLaboratoryId, // 用于实验室过滤
-    });
-  });
-  
-  return devices;
-});
+// 加载实验室设备列表
+const loadLabDevices = async (labId) => {
+  if (!labId) return;
+  try {
+    const devices = await deviceStore.fetchDevicesByLabId(labId);
+    availableDevices.value = devices;
+  } catch (error) {
+    console.error("加载实验室设备失败:", error);
+    availableDevices.value = [];
+  }
+};
+
+// 实验室切换处理
+const handleLabChange = (labId) => {
+  selectedLabId.value = labId;
+  loadLabDevices(labId);
+};
 
 // 可用用户列表（从用户store获取）
 const availableUsers = computed(() => {
@@ -214,14 +219,16 @@ const availableUsers = computed(() => {
   return [];
 });
 
-// 可用学期列表
+// 可用学期列表（从 edu store 获取）
 const availableSemesters = computed(() => {
-  // 这里可以从后端获取学期列表
-  // 暂时返回默认数据
-  return [
-    { id: 1, name: "2024-2025学年第一学期" },
-    { id: 2, name: "2024-2025学年第二学期" },
-  ];
+  const termList = eduStore.getAllTerms;
+  return termList.map(term => ({
+    id: term.id,
+    name: term.termName || term.name || `学期${term.id}`,
+    startDate: term.startDate,
+    endDate: term.endDate,
+    totalWeeks: term.totalWeeks,
+  }));
 });
 
 // 获取实验室编号
@@ -331,17 +338,23 @@ const loadStrategyData = async () => {
 };
 
 // 添加
-const handleAdd = () => {
+const handleAdd = async () => {
   formMode.value = "create";
   currentEditData.value = null;
+  // 设置默认实验室并加载设备
+  selectedLabId.value = currentLabId.value;
+  await loadLabDevices(selectedLabId.value);
   formDialogVisible.value = true;
 };
 
 // 行内编辑
-const handleEditRow = (row) => {
+const handleEditRow = async (row) => {
   formMode.value = "edit";
   // 转换数据为 QuartzTaskForm 需要的格式
   currentEditData.value = row.rawData;
+  // 设置实验室ID并加载设备
+  selectedLabId.value = row.labId || currentLabId.value;
+  await loadLabDevices(selectedLabId.value);
   formDialogVisible.value = true;
 };
 
@@ -468,11 +481,8 @@ const handleCurrentChange = (val) => {
 
 onMounted(async () => {
   await userStore.refreshUserInfo();
-  // 获取所有设备数据
-  const labs = userStore.getLaboratoryList;
-  if (labs.length > 0) {
-    await deviceStore.fetchDevices({ laboratoryIds: [labs[0].id] });
-  }
+  // 初始化学期数据
+  await eduStore.initTermData();
   await loadStrategyData();
 });
 </script>

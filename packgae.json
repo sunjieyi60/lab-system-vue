@@ -1,0 +1,12 @@
+{
+    "name": "lab-system-vue",
+    "private": true, 
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "build:libs": "npm run build --workspace=packages/ui-kit",
+        "dev": "npm run dev --workspaces"
+    }
+}

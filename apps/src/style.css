@@ -1,0 +1,195 @@
+.el-sub-menu__icon-arrow {
+  display: none;
+}
+.el-menu--horizontal .el-sub-menu__title {
+  padding-right: 12px !important;   /* 原来默认 20px，减小即可 */
+}
+
+/* 教务管理 下拉面板样式 */
+.popup {
+  width: 100px !important;        /* 控制整体宽度 */
+  overflow: hidden;               /* 避免阴影超出 */
+}
+/* 弹窗菜单样式 */
+.popup .el-menu--popup {
+  background-color: #6026cc !important;
+  padding-top: 0 !important; /* 强制移除顶部内边距 */
+  padding-bottom: 0 !important; /* 强制移除顶部内边距 */
+}
+/* 菜单项基础样式*/
+.popup .el-menu-item {
+  color: #ffffff !important;
+  font-size: 14px;
+  padding: 8px 16px;
+  white-space: normal !important; /* 自动换行 */
+  line-height: 1.4;
+}
+
+/* 鼠标悬浮样式
+第一个是放上去之后的背景
+第二个是放上去之后的文字 */
+.popup .el-menu-item:hover {
+  background-color: #f0f7ff !important;
+  color: #000000 !important;
+}
+
+/* 控制中心样式类似 */
+.control-popup {
+  width: 180px !important;
+}
+
+.control-popup .el-menu-item:hover {
+  background-color: #f7f7f7 !important;
+}
+
+
+/* 新的 */
+.layout-container[data-v-fcebc900] {
+  height:91vh;
+}
+html,body,#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* 背景渐变 */
+#app {
+  background: linear-gradient(270deg, #d6f9f2 0%, #d3e2f9 100%);
+}
+
+
+/* 全局 Element Plus 对话框样式 - 作用于所有 <el-dialog> */
+/* 对话框容器（最外层） */
+.el-dialog {
+  position: absolute;
+  width: 480px; /* 默认宽度，可通过组件的 width 属性覆盖 */
+  left: calc(50% - 480px/2);
+  top: calc(50% - 1000px/2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(239, 253, 252, 0) 0%, #F0FDFE 14.42%, #FEFFFF 45.19%), 
+              linear-gradient(180deg, #DDF4FF 0%, #F1FFFC 18.27%, #F0FFFC 35.1%, #FFFFFF 100%);
+}
+
+/* 添加策略弹窗特殊宽度 */
+.add-strategy-dialog {
+  width: 660px !important;
+  left: calc(50% - 330px) !important;
+  max-width: 95vw !important;
+}
+
+/* 添加用户弹窗特殊宽度 */
+.add-user-dialog{
+  width: 700px;
+  left: calc(50% - 350px) !important;
+  top: 0;
+}
+/* 对话框内容区 */
+.el-dialog .el-dialog__body {
+  padding:10px 15px 0 0 ;
+}
+/* 对话框标题区 */
+.el-dialog .el-dialog__header {
+  padding: 20px 20px 10px;
+}
+
+/* 对话框底部按钮区 */
+.el-dialog .el-dialog__footer {
+  padding: 15px 20px;
+}
+
+/* 解决弹窗显示时页面滚动问题 */
+.el-overlay {
+  overflow-y: hidden !important;
+}
+
+/* ---------------- 表格 ---------------- */
+/* 全局通用 el-table 样式 - 项目所有表格统一生效 */
+/* 表格外层容器（所有table-box通用） */
+.table-box {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex: 1;
+}
+
+/* 表格整体 */
+.el-table {
+  width: 100% !important;
+}
+
+/* 表头样式（原组件内的header-cell-style） */
+.el-table thead th.el-table__cell {
+  background: #226EE04D !important;
+  color: #333 !important;
+  height: 48px !important;
+  line-height: 48px !important; /* 垂直居中，补充原有样式 */
+}
+
+/* 表格行样式（原组件内的row-style） */
+.el-table tbody tr.el-table__row {
+  height: 56px !important;
+}
+.el-table tbody td.el-table__cell {
+  line-height: 56px !important; /* 单元格文字垂直居中 */
+}
+
+/* 斑马纹（条纹行）背景色（原浅蓝条纹） */
+.el-table--striped .el-table__row--striped td.el-table__cell {
+  background-color: #226ee00d !important;
+}
+
+/* 表格hover行样式（可选补充，让交互更统一） */
+.el-table__body tr:hover > td.el-table__cell {
+  background-color: #f0f7ff !important; /* 浅蓝hover，与主色调呼应 */
+}
+
+/* 表格边框/分割线（可选补充，统一全局表格边框） */
+.el-table, .el-table__header, .el-table__body {
+  border: none !important;
+}
+.el-table__cell {
+  border-right: none !important;
+}
+.el-table__row:last-child .el-table__cell {
+  border-bottom: none !important;
+}
+
+/* 所有el-pagination 分页器 通用样式 */
+.el-pagination {
+  /* 字体放大： 14px，可按需调15px/16px */
+  font-size: 14px !important;
+  /* 统一文字颜色，与项目风格匹配 */
+  color: #606266 !important;
+}
+
+/* 分页器内所有子元素（页码、下拉、输入框等）居中+对齐 */
+.el-pagination > * {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  row-gap: 6px !important;
+}
+
+/* 分页器后面的span元素配统一样式 */
+.el-pagination + span,
+.el-pagination ~ span {
+  font-size: 14px !important;
+  color: #606266 !important;
+  margin: 0 8px !important;
+}
+
+/* 分页器内下拉框、输入框宽度适配 */
+.el-pagination .el-select {
+  width: 70px !important;
+}
+.el-pagination .el-input-number {
+  width: 60px !important;
+}
+.custom-import-container {
+  left: calc(50% - 700px/2);
+  width:560px !important;
+}

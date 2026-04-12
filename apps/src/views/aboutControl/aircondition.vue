@@ -74,9 +74,9 @@
             <template #default="{ row }">
               <span
                 class="status-tag"
-                :class="row.switch === '开' ? 'status-open' : 'status-close'"
+                :class="row.isOpen ? 'status-open' : 'status-close'"
               >
-                {{ row.switch }}
+                {{ row.isOpen ? '开' : '关' }}
               </span>
             </template>
           </el-table-column>
@@ -251,7 +251,7 @@ const currentSelectedRows = ref([]);
 
 // 统计：开着的空调数量
 const openCount = computed(() => {
-  return tableData.value.filter(item => item.switch === '开').length;
+  return tableData.value.filter(item => item.isOpen).length;
 });
 
 // 计算属性：表格数据（使用字符串拼接搜索）
@@ -615,7 +615,6 @@ onMounted(async () => {
 .ac-control-page {
   padding: 16px;
   background: #f5f7fa;
-  min-height: calc(100vh - 120px);
   box-sizing: border-box;
 }
 

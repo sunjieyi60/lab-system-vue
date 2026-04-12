@@ -132,13 +132,13 @@
             </template>
           </el-table-column>
           <el-table-column prop="deviceName" label="电源空开" align="center" />
-          <el-table-column prop="switchStatus" label="空开状态" align="center">
+          <el-table-column prop="isOpen" label="空开状态" align="center">
             <template #default="{ row }">
               <el-tag
-                :type="row.switchStatus === '通电' ? 'success' : 'danger'"
+                :type="row.isOpen ? 'success' : 'danger'"
                 size="small"
               >
-                {{ row.switchStatus }}
+                {{ row.isOpen ? '通电' : '断电' }}
               </el-tag>
             </template>
           </el-table-column>
@@ -163,12 +163,68 @@
       </div>
     </div>
   </div>
-  <RemoteControl
+  <!-- 远程控制弹窗 - 使用 CircuitBreakControl 组件 -->
+  <el-dialog
     v-model="showRemote"
-    :selected-rows="selectedRows"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
+    :title="currentSelectedRows.length > 1 ? `批量控制 (${currentSelectedRows.length}台设备)` : '断路器远程控制'"
+    width="480px"
+    :close-on-click-modal="false"
+    destroy-on-close
+    @open="handleDialogOpen"
+    @closed="handleDialogClosed"
+  >
+    <div v-if="currentSelectedRows.length === 0" class="dialog-empty">
+      未选择设备
+    </div>
+    
+    <!-- 批量控制模式 -->
+    <div v-else-if="currentSelectedRows.length > 1" class="dialog-content">
+      <CircuitBreakControl
+        :device="selectedCircuitBreakDevices"
+        v-bind="circuitBreakControlConfig"
+        @execute="handleBatchControlExecute"
+      />
+
+      <!-- 批量控制设备列表预览 -->
+      <div class="batch-device-list">
+        <div class="batch-device-list-title">
+          <span>待控制设备列表 ({{ currentSelectedRows.length }})</span>
+          <el-button type="primary" link size="small" @click="showDeviceList = !showDeviceList">
+            {{ showDeviceList ? '收起' : '展开' }}
+          </el-button>
+        </div>
+        <el-collapse-transition>
+          <div v-show="showDeviceList" class="batch-device-list-content">
+            <el-tag 
+              v-for="(row, index) in currentSelectedRows" 
+              :key="row.id"
+              size="small"
+              class="device-tag"
+            >
+              {{ index + 1 }}. {{ row.deviceName }} - {{ getLabName(row.labId) }}
+            </el-tag>
+          </div>
+        </el-collapse-transition>
+      </div>
+    </div>
+
+    <!-- 单设备控制模式 -->
+    <div v-else class="dialog-content">
+      <!-- 设备信息 -->
+      <div class="selected-device-info">
+        <span class="device-label">当前设备：</span>
+        <span class="device-value">{{ currentSelectedRows[0].deviceName }}</span>
+        <span class="device-location">{{ getLabName(currentSelectedRows[0].labId) }}</span>
+      </div>
+
+      <CircuitBreakControl
+        ref="circuitBreakControlRef"
+        :device="selectedCircuitBreakDevice"
+        v-bind="circuitBreakControlConfig"
+        @execute="handleControlExecute"
+      />
+    </div>
+  </el-dialog>
   <AddNode
     v-model="showAddNode"
     device-type="CircuitBreak"
@@ -178,12 +234,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useUserStore } from "@/stores/user.js";
 import { useDeviceStore, DeviceType } from "@/stores/device.js";
-import RemoteControl from "@/components/AboutElectric/RemoteControl.vue";
+import { controlDevice } from "@/api/device.js";
 import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
+// 引入 control-kit 组件
+import CircuitBreakControl from "@packages/control-kit/src/components/controls/CircuitBreakControl.vue";
 
 const userStore = useUserStore();
 const deviceStore = useDeviceStore();
@@ -193,6 +251,7 @@ const building = ref("all");
 const labNo = ref("all");
 const searchKey = ref("");
 const tableRef = ref();
+const circuitBreakControlRef = ref();
 const isLoading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -204,6 +263,12 @@ const selectedRows = ref([]);
 // 弹窗显示状态
 const showRemote = ref(false);
 const showAddNode = ref(false);
+
+// 保存选中的行数据（用于传给弹窗）
+const currentSelectedRows = ref([]);
+
+// 批量控制设备列表展开状态
+const showDeviceList = ref(false);
 
 // 计算属性：表格数据（根据选择的实验室筛选）
 const tableData = computed(() => {
@@ -248,7 +313,6 @@ const tableData = computed(() => {
   return data.map((item) => ({
     ...item,
     // 映射字段名
-    switchStatus: item.switch, // store: switch -> 组件: switchStatus
     leakageCurrent: item.leakage, // store: leakage -> 组件: leakageCurrent
     lineTemp: item.temperature, // store: temperature -> 组件: lineTemp
     // 显式添加控制参数到顶层，方便子组件获取
@@ -344,7 +408,22 @@ const handleRemoteControl = () => {
     ElMessage.warning("请至少选择一条记录");
     return;
   }
+  // 保存当前选中的行数据
+  const rawData = deviceStore.getCircuitBreakTableData;
+  currentSelectedRows.value = selectedRows.value.map((selectRow) => {
+    return rawData.find((rawRow) => rawRow.id === selectRow.id) || selectRow;
+  });
   showRemote.value = true;
+  
+  // 根据设备状态设置控制组件的初始状态
+  nextTick(() => {
+    if (circuitBreakControlRef.value && currentSelectedRows.value.length === 1) {
+      const device = currentSelectedRows.value[0];
+      // isOpen: true 表示合闸（闭合），对应 isClosed: true
+      const isClosed = device.isOpen;
+      circuitBreakControlRef.value.setStatus(isClosed);
+    }
+  });
 };
 
 const handleAdd = () => {
@@ -358,6 +437,126 @@ const handleEdit = () => {
     return;
   }
   console.log("编辑记录：", selection[0]);
+};
+
+// 断路器控制配置
+const circuitBreakControlConfig = {
+  priority: 'NORMAL',
+  showWarning: true,
+  showStatus: false,
+  showControlButtons: true,
+  showOpenButton: true,
+  showCloseButton: true,
+  showConfirmDialog: true,
+  showQuickActions: false,
+  showQueryStatus: false,
+  showDeviceInfo: true,
+  showInfoId: true,
+  showInfoName: true,
+  showInfoAddress: true,
+  showInfoGateway: true,
+  showSectionTitles: true,
+  statusTitle: '当前状态',
+  controlTitle: '控制操作',
+  quickActionsTitle: '快捷操作',
+  deviceInfoTitle: '设备信息',
+  warningTitle: '断路器操作警告',
+  warningDesc: '分闸/合闸操作将影响该区域供电，请谨慎操作',
+  openButtonText: '合闸 (通电)',
+  closeButtonText: '分闸 (断电)',
+  queryStatusText: '查询状态',
+  openIcon: '⚡',
+  closeIcon: '⏻',
+  confirmDialogTitle: '确认操作',
+  confirmHint: '此操作将影响设备供电，请确认是否继续？',
+  confirmButtonText: '确认执行',
+  cancelButtonText: '取消',
+  openConfirmMessage: '确认执行合闸操作？设备将恢复供电。',
+  closeConfirmMessage: '确认执行分闸操作？设备将断电。',
+};
+
+// 将选中的行数据转换为 CircuitBreak 类型设备对象（单设备）
+const selectedCircuitBreakDevice = computed(() => {
+  if (currentSelectedRows.value.length === 0) return null;
+  const row = currentSelectedRows.value[0];
+  return {
+    id: row.id,
+    deviceName: row.deviceName || '断路器设备',
+    deviceType: 'CircuitBreak',
+    belongToLaboratoryId: row.labId,
+    pollingEnabled: false,
+    address: row.address || row.rawRecord?.address || 1,
+    rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
+  };
+});
+
+// 将选中的行数据转换为 CircuitBreak 类型设备对象列表（批量）
+const selectedCircuitBreakDevices = computed(() => {
+  return currentSelectedRows.value.map(row => ({
+    id: row.id,
+    deviceName: row.deviceName || '断路器设备',
+    deviceType: 'CircuitBreak',
+    belongToLaboratoryId: row.labId,
+    pollingEnabled: false,
+    address: row.address || row.rawRecord?.address || 1,
+    rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
+  }));
+});
+
+/**
+ * 处理单设备控制命令执行
+ * @param {Task[]} tasks - 任务列表
+ * @param {Function} callback - 执行结果回调
+ */
+const handleControlExecute = async (tasks, callback) => {
+  console.log('【CircuitBreakControl】执行控制命令:', tasks);
+  
+  try {
+    // 调用实际 API 发送控制命令，task 原封不动发送
+    for (const task of tasks) {
+      const res = await controlDevice(task);
+      console.log('【控制响应】', res);
+    }
+    
+    ElMessage.success('控制命令已发送');
+    handleRefresh();
+    
+    if (callback) callback(true, '执行成功');
+    showRemote.value = false;
+    
+  } catch (error) {
+    console.error('控制命令执行失败:', error);
+    ElMessage.error('控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
+};
+
+/**
+ * 处理批量控制命令执行
+ * @param {Task[]} tasks - 任务列表
+ * @param {Function} callback - 执行结果回调
+ */
+const handleBatchControlExecute = async (tasks, callback) => {
+  console.log('【CircuitBreakControl】批量执行控制命令:', tasks);
+  
+  try {
+    // 批量调用 API 发送控制命令
+    for (const task of tasks) {
+      const res = await controlDevice(task);
+      console.log('【批量控制响应】', res);
+    }
+    
+    ElMessage.success(`批量控制命令已发送（${tasks.length}台设备）`);
+    handleRefresh();
+    
+    if (callback) callback(true, '批量执行成功');
+    showRemote.value = false;
+    
+  } catch (error) {
+    console.error('批量控制命令执行失败:', error);
+    ElMessage.error('批量控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
 };
 
 const handleDelete = () => {
@@ -499,5 +698,77 @@ onMounted(async () => {
 
 :deep(.el-table) {
   font-size: 13px;
+}
+
+/* ---------------- 弹窗样式 ---------------- */
+.dialog-empty {
+  padding: 40px;
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+}
+
+.dialog-content {
+  padding: 0 10px;
+}
+
+.selected-device-info {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.device-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.device-location {
+  font-size: 13px;
+  color: #909399;
+  margin-left: auto;
+}
+
+:deep(.el-dialog__body) {
+  padding-top: 10px;
+}
+
+/* 批量控制设备列表样式 */
+.batch-device-list {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.batch-device-list-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.batch-device-list-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.device-tag {
+  margin: 0;
 }
 </style>

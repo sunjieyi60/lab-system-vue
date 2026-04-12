@@ -81,15 +81,15 @@
             <template #default="{ row }">
               <span
                 class="status-tag"
-                :class="row.doorStatus === '开' ? 'status-open' : 'status-close'"
+                :class="row.isOpen ? 'status-open' : 'status-close'"
               >
-                {{ row.doorStatus }}
+                {{ row.isOpen ? '开' : '关' }}
               </span>
             </template>
           </el-table-column>
           <el-table-column prop="lockStatus" label="门锁状态" align="center" min-width="120">
             <template #default="{ row }">
-              {{ row.lockStatus }}{{ row.isLock ? '（锁定）' : '（未锁定）' }}
+              {{ lockStatusMap[row.lockStatus] || '未知' }}{{ row.isLock ? '（锁定）' : '（未锁定）' }}
             </template>
           </el-table-column>
           <el-table-column prop="delayTime" label="延时时间" align="center" min-width="100">
@@ -231,9 +231,12 @@ const selectedRows = ref([]);
 const showRemote = ref(false);
 const showLock = ref(false);
 
+// 门锁状态映射
+const lockStatusMap = { 0: '未锁', 1: '长关', 2: '长开', 3: '保持' };
+
 // 统计：开着的门数量
 const openCount = computed(() => {
-  return tableData.value.filter(item => item.doorStatus === '开').length;
+  return tableData.value.filter(item => item.isOpen).length;
 });
 
 // ==================== AccessControl 组件配置 ====================
@@ -426,12 +429,29 @@ const tableData = computed(() => {
     );
   }
 
-  return data.map((item) => ({
-    ...item,
-    address: item.rawRecord?.address || item.address,
-    selfId: item.rawRecord?.selfId || item.selfId,
-    isLock: item.rawRecord?.isLock ?? item.isLock ?? false,
-  }));
+  return data.map((item) => {
+    // 获取 device 和 deviceRecord 数据
+    const device = item.device || item;
+    const recordData = item.deviceRecord?.data || item.rawRecord?.deviceRecord?.data || {};
+    
+    // 映射锁定状态（优先使用 deviceRecord 中的 isLock）
+    const isLock = recordData.isLock ?? device.isLock ?? item.isLock ?? false;
+    
+    // 映射延时时间
+    const delayTime = recordData.delayTime ?? item.delayTime ?? 0;
+    
+    return {
+      ...item,
+      id: device.id ?? item.id,
+      deviceName: device.deviceName ?? item.deviceName,
+      address: recordData.address ?? device.address ?? item.address ?? 1,
+      rs485GatewayId: device.rs485GatewayId ?? item.rs485GatewayId ?? 1,
+      belongToLaboratoryId: device.belongToLaboratoryId ?? item.labId,
+      pollingEnabled: device.pollingEnabled ?? item.pollingEnabled ?? true,
+      isLock,
+      delayTime,
+    };
+  });
 });
 
 // 获取单位名称
@@ -543,7 +563,6 @@ onMounted(async () => {
 .door-control-page {
   padding: 16px;
   background: #f5f7fa;
-  min-height: calc(100vh - 120px);
   box-sizing: border-box;
 }
 

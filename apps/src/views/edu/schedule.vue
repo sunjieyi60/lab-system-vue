@@ -4,125 +4,76 @@
       <div class="form-item">
         学年学期：
         <el-select v-model="term" placeholder="请选择学年学期">
-          <el-option
-            v-for="item in termList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
+          <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </div>
       <div class="form-item">
         单位：
-        <el-select
-          v-model="department"
-          placeholder="请选择单位"
-          @change="handleDeptChange"
-          clearable
-        >
-          <el-option
-            v-for="item in deptList"
-            :key="item.id"
-            :label="item.deptName"
-            :value="item.id"
-          />
+        <el-select v-model="department" placeholder="请选择单位" @change="handleDeptChange" clearable>
+          <el-option v-for="item in deptList" :key="item.id" :label="item.deptName" :value="item.id" />
         </el-select>
       </div>
       <div class="form-item">
         楼栋：
-        <el-select
-          v-model="building"
-          placeholder="请选择楼栋"
-          @change="handleBuildingChange"
-          clearable
-        >
-          <el-option
-            v-for="item in buildingList"
-            :key="item.id"
-            :label="item.buildingName"
-            :value="item.id"
-          />
+        <el-select v-model="building" placeholder="请选择楼栋" @change="handleBuildingChange" clearable>
+          <el-option v-for="item in buildingList" :key="item.id" :label="item.buildingName" :value="item.id" />
         </el-select>
       </div>
       <div class="form-item">
         实验室编号：
-        <el-select
-          v-model="room"
-          placeholder="请选择实验室"
-          style="width: 200px"
-          @change="handleLabChange"
-          clearable
-        >
-          <el-option
-            v-for="item in laboratoryList"
-            :key="item.id"
-            :label="item.laboratoryId"
-            :value="item.id"
-          />
+        <el-select v-model="room" placeholder="请选择实验室" style="width: 200px" @change="handleLabChange" clearable>
+          <el-option v-for="item in laboratoryList" :key="item.id" :label="item.laboratoryId" :value="item.id" />
         </el-select>
       </div>
     </div>
     <div class="button-bar">
       <el-button type="primary" @click="handleManualSchedule">
-        <template #icon
-          ><el-icon><Plus /></el-icon
-        ></template>
+        <template #icon><el-icon>
+            <Plus />
+          </el-icon></template>
         手动排课
       </el-button>
       <el-button @click="handleImportSchedule">
-        <template #icon
-          ><el-icon><Upload /></el-icon
-        ></template>
+        <template #icon><el-icon>
+            <Upload />
+          </el-icon></template>
         导入课表
       </el-button>
       <el-button>
-        <template #icon
-          ><el-icon><Refresh /></el-icon
-        ></template>
+        <template #icon><el-icon>
+            <Refresh />
+          </el-icon></template>
         刷新
       </el-button>
 
       <el-button plain @click="handleDelete">
-        <template #icon
-          ><el-icon><Delete /></el-icon
-        ></template>
+        <template #icon><el-icon>
+            <Delete />
+          </el-icon></template>
         删除
       </el-button>
       <el-button plain type="danger" @click="handleDeleteAll">
-        <template #icon
-          ><el-icon><DeleteFilled /></el-icon
-        ></template>
+        <template #icon><el-icon>
+            <DeleteFilled />
+          </el-icon></template>
         全部删除
       </el-button>
     </div>
     <!-- 排课组件 -->
-    <CourseCalendar
-      :courses="courseList"
-      :selected-schedule-id="selectedScheduleId"
-      @select-schedule="handleSelectSchedule"
-    />
+    <div class="calendar-wrapper">
+      <CourseCalendar :courses="courseList" :selected-schedule-id="selectedScheduleId"
+        @select-schedule="handleSelectSchedule" />
+    </div>
   </div>
 
   <!-- 手动排课弹窗 -->
-  <ManualScheduling
-    v-model="scheduleDialogVisible"
-    :edit-data="currentEditData"
-    :semester-id="currentSemesterId"
-    :laboratory-id="currentLaboratoryId"
-    :dept-list="deptList"
-    @success="handleScheduleSuccess"
-    @delete="handleScheduleDelete"
-  />
+  <ManualScheduling v-model="scheduleDialogVisible" :edit-data="currentEditData" :semester-id="currentSemesterId"
+    :laboratory-id="currentLaboratoryId" :dept-list="deptList" @success="handleScheduleSuccess"
+    @delete="handleScheduleDelete" />
 
   <!-- 导入课表弹窗 -->
-  <ImportScheduleDialog
-    v-model="importDialogVisible"
-    top="30vh"
-    :semester-id="currentSemesterId"
-    :laboratory-id="currentLaboratoryId"
-    :laboratory-list="laboratoryList"
-    @success="handleImportSuccess"
-  />
+  <ImportScheduleDialog v-model="importDialogVisible" top="30vh" :semester-id="currentSemesterId"
+    :laboratory-id="currentLaboratoryId" :laboratory-list="laboratoryList" @success="handleImportSuccess" />
 </template>
 
 <script setup>
@@ -695,13 +646,18 @@ onMounted(async () => {
 
 <style scoped>
 .filter-bar {
+  /* width:100%; */
+  /* min-height:0%; */
   display: flex;
-  gap: 14px;
+  flex-wrap: wrap;
+  /* gap: 14px; */
   margin-bottom: 14px;
   align-items: center;
-  overflow-x: auto;
-  min-width: 0;
-  justify-content: flex-start;
+  /* padding :5px 0px; */
+  gap: 5px;
+  /* overflow-x: auto; */
+  /* min-width: 0; */
+  justify-content: start;
 }
 
 .form-item {
@@ -725,11 +681,12 @@ onMounted(async () => {
 
 /* 按钮栏容器 */
 .button-bar {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   display: flex;
   gap: 10px;
   justify-content: flex-start;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 /* 统一按钮样式：核心修复 */
@@ -758,6 +715,7 @@ onMounted(async () => {
   border: 0;
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.35);
 }
+
 .button-bar .el-button--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(64, 158, 255, 0.45);
@@ -775,15 +733,24 @@ onMounted(async () => {
   border-color: #fbc4c4;
   color: #f56c6c;
 }
+
 .button-bar .el-button--danger.is-plain:hover {
   background: #fef0f0;
   border-color: #f56c6c;
 }
 
-/* 页面容器 */
 .schedule-page {
   width: 100%;
-  padding: 0 20px;
-  box-sizing: border-box;
+  padding: 0 20px 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0%;
+}
+
+.calendar-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

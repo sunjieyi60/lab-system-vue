@@ -9,10 +9,59 @@
               <span>基础管理</span>
             </template>
           </el-card>
-          <el-card class="dashboard-card">
+          <el-card
+            v-loading="facilityLoading"
+            element-loading-text="加载中..."
+            class="dashboard-card facility-card"
+          >
             <template #header>
-              <span>教务管理</span>
+              <span>实验室智能设施</span>
             </template>
+            <div class="facility-content">
+              <template v-if="facilityList.length">
+                <el-table
+                  :data="facilityList"
+                  stripe
+                  style="width: 100%"
+                  :header-cell-style="{
+                    background: '#226EE04D',
+                    color: '#333',
+                    height: '40px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }"
+                  :cell-style="{ textAlign: 'center', fontSize: '13px' }"
+                  :row-style="{ height: '44px' }"
+                >
+                  <el-table-column
+                    prop="name"
+                    label="类型"
+                    min-width="80"
+                  />
+                  <el-table-column
+                    prop="total"
+                    label="总数"
+                    min-width="60"
+                  />
+                  <el-table-column
+                    prop="open"
+                    label="开启"
+                    min-width="60"
+                  />
+                  <el-table-column
+                    prop="online"
+                    label="在线"
+                    min-width="60"
+                  />
+                </el-table>
+              </template>
+              <el-empty
+                v-else
+                description="暂无数据"
+                :image-size="60"
+              />
+            </div>
           </el-card>
         </div>
       </el-col>
@@ -33,9 +82,26 @@
         <div class="right-column">
           <el-card class="dashboard-card alarm-card">
             <template #header>
-              <span>报警信息</span>
+              <div class="alarm-header">
+                <span>报警信息</span>
+                <el-select
+                  v-model="timeRange"
+                  size="small"
+                  style="width: 90px"
+                  @change="handleTimeRangeChange"
+                >
+                  <el-option label="最近一天" value="day" />
+                  <el-option label="最近一周" value="week" />
+                  <el-option label="最近一月" value="month" />
+                  <el-option label="全部" value="all" />
+                </el-select>
+              </div>
             </template>
-            <div class="alarm-content">
+            <div
+              v-loading="isLoading"
+              element-loading-text="加载中..."
+              class="alarm-content"
+            >
               <template v-if="alarmData.length > 0">
                 <div
                   v-for="(item, index) in alarmData"
@@ -67,21 +133,70 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
 import { apiGetAlarmLogs } from "@/api/log";
+import { get_overview_device_statistics } from "@/api/overview";
 
 // 报警日志数据
 const alarmData = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(8);
 const total = ref(0);
+const timeRange = ref("week");
+const isLoading = ref(false);
 
-// 获取默认时间范围（最近7天）
-const getDefaultTimeRange = () => {
+// 实验室智能设施数据
+const facilityStats = ref({});
+const facilityLoading = ref(false);
+
+const deviceTypeMap = {
+  Light: "照明",
+  AirCondition: "空调",
+  Sensor: "传感器",
+  CircuitBreak: "断路器",
+  Access: "门禁",
+};
+
+const getOpenCount = (devices) => {
+  if (!Array.isArray(devices) || !devices.length) return "-";
+  const hasRecord = devices.some((d) => d.deviceRecord !== undefined);
+  if (!hasRecord) return "-";
+  return devices.filter((d) => d.deviceRecord?.data?.isOpen === true).length;
+};
+
+const facilityList = computed(() => {
+  return Object.entries(facilityStats.value).map(([key, value]) => ({
+    key,
+    name: deviceTypeMap[key] || key,
+    total: value.total || 0,
+    online: value.online || 0,
+    open: getOpenCount(value.devices),
+  }));
+});
+
+// 根据选择的时间范围计算起止时间
+const getTimeRange = () => {
   const end = new Date();
   const start = new Date();
-  start.setDate(start.getDate() - 7);
+
+  switch (timeRange.value) {
+    case "day":
+      start.setDate(start.getDate() - 1);
+      break;
+    case "week":
+      start.setDate(start.getDate() - 7);
+      break;
+    case "month":
+      start.setMonth(start.getMonth() - 1);
+      break;
+    case "all":
+      start.setFullYear(2000, 0, 1);
+      break;
+    default:
+      start.setDate(start.getDate() - 7);
+  }
+
   return {
     startTime: formatDate(start),
     endTime: formatDate(end),
@@ -108,8 +223,9 @@ const convertToBackendFormat = (dateStr) => {
 
 // 查询报警日志
 const fetchAlarmLogs = async () => {
-  const { startTime, endTime } = getDefaultTimeRange();
+  const { startTime, endTime } = getTimeRange();
 
+  isLoading.value = true;
   try {
     const params = {
       startTime: convertToBackendFormat(startTime),
@@ -126,6 +242,8 @@ const fetchAlarmLogs = async () => {
   } catch (error) {
     console.error("获取报警日志失败:", error);
     ElMessage.error(error.response?.data?.msg || "获取数据失败");
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -135,8 +253,30 @@ const handleCurrentChange = (val) => {
   fetchAlarmLogs();
 };
 
+// 时间范围变化
+const handleTimeRangeChange = () => {
+  currentPage.value = 1;
+  fetchAlarmLogs();
+};
+
+// 获取实验室智能设施统计
+const fetchFacilityStats = async () => {
+  facilityLoading.value = true;
+  try {
+    const res = await get_overview_device_statistics();
+    facilityStats.value = res.data?.data || {};
+  } catch (error) {
+    console.error("获取实验室智能设施统计失败:", error);
+    ElMessage.error(error.response?.data?.msg || "获取数据失败");
+    facilityStats.value = {};
+  } finally {
+    facilityLoading.value = false;
+  }
+};
+
 onMounted(() => {
   fetchAlarmLogs();
+  fetchFacilityStats();
 });
 </script>
 
@@ -215,6 +355,29 @@ onMounted(() => {
   justify-content: center;
   padding-top: 12px;
   flex-shrink: 0;
+}
+
+.alarm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.facility-card :deep(.el-card__body) {
+  padding: 16px;
+  height: calc(100% - 40px);
+}
+
+.facility-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.facility-content :deep(.el-table) {
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .dashboard-card :deep(.el-card__body) {

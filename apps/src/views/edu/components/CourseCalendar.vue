@@ -612,9 +612,9 @@ function handleCardClick(ev) {
   display: flex;
   flex-direction: column;
   width: 100%;
+  height: 100%;
   font-size: 13px;
   color: #333;
-  /* 定义CSS变量：行高由JS根据容器高度计算 */
   --row-height: 42px;
 }
 
@@ -632,7 +632,7 @@ function handleCardClick(ev) {
 .corner-cell {
   width: 120px;
   box-sizing: border-box;
-  border-right: 1px solid #c3d9ff;
+  /* border-right: 1px solid #c3d9ff; */
   border-left: 1px solid #c3d9ff;
 }
 /* 表格第一行 时间行 的样式 */
@@ -687,7 +687,7 @@ function handleCardClick(ev) {
 .day-grid {
   display: grid;
   position: relative;
-  border-right: 1px solid #c3d9ff;
+  /* border-right: 1px solid #c3d9ff; */
   grid-template-rows: repeat(11, var(--row-height)); /* 与左侧完全一致 */
 }
 /* 每个背景格子 */

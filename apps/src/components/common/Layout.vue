@@ -64,10 +64,13 @@ import AppHeader from "@/components/common/AppHeader.vue";
 
 /* 主体内容区域可滚动 */
 .main-content {
-  flex: 1;
-  overflow-y: auto; /* 只有内容区内部滚动 */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* flex: 1; */
+  overflow-y: auto; 
   background-color: #ffffff;
-  padding: 8px 16px 16px 16px;
+  padding: 0px 16px 0px 16px;
 }
 
 /* .is-active::before 的 z-index: -1 正常生效 */

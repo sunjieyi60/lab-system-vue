@@ -1,6 +1,15 @@
 // src/stores/smartControl.js
 import { defineStore } from "pinia";
-import { getQuartzList, getQuartzListByLab } from "@/api/smartControl";
+import {
+  getQuartzList,
+  getQuartzListByLab,
+  createQuartz,
+  updateQuartz,
+  deleteQuartz,
+  enableQuartz,
+  cancelQuartz,
+  generateFromCourseSchedule,
+} from "@/api/smartControl";
 import { ElMessage } from "element-plus";
 
 export const useSmartControlStore = defineStore("smartControl", {
@@ -50,12 +59,12 @@ export const useSmartControlStore = defineStore("smartControl", {
 
     // 根据策略ID获取策略详情
     getStrategyById: (s) => (id) => {
-      return s.strategyList.find((item) => String(item.task?.id) === String(id));
+      return s.strategyList.find((item) => item.task?.id === id);
     },
 
     // 根据任务ID获取策略详情
     getStrategyByTaskId: (s) => (taskId) => {
-      return s.strategyList.find((item) => String(item.task?.id) === String(taskId));
+      return s.strategyList.find((item) => item.task?.id === taskId);
     },
 
     // 获取启用的策略列表
@@ -70,7 +79,7 @@ export const useSmartControlStore = defineStore("smartControl", {
   },
 
   actions: {
-    /* ---- 获取定时任务列表（简化数据，用于表格显示）---- */
+    /* ---- 获取定时任务列表 ---- */
     async fetchQuartzList(params = {}) {
       this.loading = true;
       try {
@@ -79,64 +88,6 @@ export const useSmartControlStore = defineStore("smartControl", {
         return this.quartzList;
       } catch (error) {
         ElMessage.error("获取定时任务列表失败");
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    /* ---- 同时获取简化列表和完整策略列表 ---- */
-    async fetchAllQuartzData(params = {}, labIds = []) {
-      this.loading = true;
-      try {
-        // /quartz/list 不需要实验室ID，直接调用一次获取所有数据
-        const simpleRes = await getQuartzList(params);
-        this.quartzList = simpleRes.data?.data || [];
-        console.log("【SmartControlStore】quartzList 数据:", this.quartzList.length, "条");
-        
-        // /quartz/list-by-lab 需要实验室ID
-        let allStrategyList = [];
-        let totalRecords = 0;
-        
-        if (labIds.length > 0) {
-          // 如果有实验室列表，为每个实验室分别调用接口
-          const fullPromises = labIds.map(labId => 
-            getQuartzListByLab({ ...params, laboratoryId: labId })
-          );
-          const fullResults = await Promise.all(fullPromises);
-          
-          fullResults.forEach(res => {
-            const data = res.data?.data || {};
-            const records = data.records || [];
-            allStrategyList.push(...records);
-            totalRecords += data.total || records.length;
-          });
-        } else if (params.laboratoryId) {
-          // 如果指定了单个实验室ID
-          const fullRes = await getQuartzListByLab(params);
-          const fullData = fullRes.data?.data || {};
-          allStrategyList = fullData.records || [];
-          totalRecords = fullData.total || 0;
-        }
-        
-        this.strategyList = allStrategyList;
-        this.strategyPagination = {
-          total: totalRecords,
-          size: params.size || 20,
-          current: params.current || 1,
-          pages: Math.ceil(totalRecords / (params.size || 20)) || 1,
-        };
-        
-        console.log("【SmartControlStore】strategyList 数据:", this.strategyList.length, "条");
-        
-        return {
-          quartzList: this.quartzList,
-          strategyList: this.strategyList,
-          pagination: this.strategyPagination,
-        };
-      } catch (error) {
-        console.error("【SmartControlStore】获取策略数据失败:", error);
-        ElMessage.error("获取策略数据失败");
         throw error;
       } finally {
         this.loading = false;
@@ -225,6 +176,177 @@ export const useSmartControlStore = defineStore("smartControl", {
         pages: 1,
       };
       this.currentLaboratoryId = null;
+    },
+
+    /* ---- 创建定时任务 ---- */
+    async createStrategy(data) {
+      this.loading = true;
+      try {
+        const res = await createQuartz(data);
+        ElMessage.success("创建定时任务成功");
+        return res.data?.data;
+      } catch (error) {
+        console.error("创建定时任务失败:", error);
+        ElMessage.error(error.message || "创建定时任务失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 更新定时任务 ---- */
+    async updateStrategy(data) {
+      this.loading = true;
+      try {
+        const res = await updateQuartz(data);
+        ElMessage.success("更新定时任务成功");
+        return res.data?.data;
+      } catch (error) {
+        console.error("更新定时任务失败:", error);
+        ElMessage.error(error.message || "更新定时任务失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 删除定时任务 ---- */
+    async deleteStrategy(taskId) {
+      this.loading = true;
+      try {
+        await deleteQuartz(taskId);
+        ElMessage.success("删除定时任务成功");
+        // 从列表中移除
+        this.strategyList = this.strategyList.filter(
+          (item) => item.task?.id !== taskId
+        );
+        this.strategyPagination.total = Math.max(
+          0,
+          this.strategyPagination.total - 1
+        );
+      } catch (error) {
+        console.error("删除定时任务失败:", error);
+        ElMessage.error(error.message || "删除定时任务失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 批量删除定时任务 ---- */
+    async batchDeleteStrategy(taskIds) {
+      this.loading = true;
+      try {
+        const promises = taskIds.map((id) => deleteQuartz(id));
+        await Promise.all(promises);
+        ElMessage.success(`成功删除 ${taskIds.length} 个定时任务`);
+        // 从列表中移除
+        this.strategyList = this.strategyList.filter(
+          (item) => !taskIds.includes(item.task?.id)
+        );
+        this.strategyPagination.total = Math.max(
+          0,
+          this.strategyPagination.total - taskIds.length
+        );
+      } catch (error) {
+        console.error("批量删除定时任务失败:", error);
+        ElMessage.error(error.message || "批量删除定时任务失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 启用定时任务 ---- */
+    async enableStrategy(taskId) {
+      try {
+        await enableQuartz(taskId);
+        ElMessage.success("启用定时任务成功");
+        // 更新本地状态
+        const strategy = this.strategyList.find(
+          (item) => item.task?.id === taskId
+        );
+        if (strategy) {
+          strategy.task.enable = true;
+        }
+      } catch (error) {
+        console.error("启用定时任务失败:", error);
+        ElMessage.error(error.message || "启用定时任务失败");
+        throw error;
+      }
+    },
+
+    /* ---- 禁用定时任务 ---- */
+    async disableStrategy(taskId) {
+      try {
+        await cancelQuartz(taskId);
+        ElMessage.success("禁用定时任务成功");
+        // 更新本地状态
+        const strategy = this.strategyList.find(
+          (item) => item.task?.id === taskId
+        );
+        if (strategy) {
+          strategy.task.enable = false;
+        }
+      } catch (error) {
+        console.error("禁用定时任务失败:", error);
+        ElMessage.error(error.message || "禁用定时任务失败");
+        throw error;
+      }
+    },
+
+    /* ---- 批量启用定时任务 ---- */
+    async batchEnableStrategy(taskIds) {
+      try {
+        const promises = taskIds.map((id) => enableQuartz(id));
+        await Promise.all(promises);
+        ElMessage.success(`成功启用 ${taskIds.length} 个定时任务`);
+        // 更新本地状态
+        this.strategyList.forEach((item) => {
+          if (taskIds.includes(item.task?.id)) {
+            item.task.enable = true;
+          }
+        });
+      } catch (error) {
+        console.error("批量启用定时任务失败:", error);
+        ElMessage.error(error.message || "批量启用定时任务失败");
+        throw error;
+      }
+    },
+
+    /* ---- 批量禁用定时任务 ---- */
+    async batchDisableStrategy(taskIds) {
+      try {
+        const promises = taskIds.map((id) => cancelQuartz(id));
+        await Promise.all(promises);
+        ElMessage.success(`成功禁用 ${taskIds.length} 个定时任务`);
+        // 更新本地状态
+        this.strategyList.forEach((item) => {
+          if (taskIds.includes(item.task?.id)) {
+            item.task.enable = false;
+          }
+        });
+      } catch (error) {
+        console.error("批量禁用定时任务失败:", error);
+        ElMessage.error(error.message || "批量禁用定时任务失败");
+        throw error;
+      }
+    },
+
+    /* ---- 从课表生成定时任务 ---- */
+    async generateFromCourseSchedule(data) {
+      this.loading = true;
+      try {
+        const res = await generateFromCourseSchedule(data);
+        ElMessage.success("从课表生成定时任务成功");
+        return res.data?.data;
+      } catch (error) {
+        console.error("从课表生成定时任务失败:", error);
+        ElMessage.error(error.message || "从课表生成定时任务失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
   },
 });

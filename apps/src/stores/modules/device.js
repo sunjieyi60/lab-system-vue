@@ -1,6 +1,6 @@
 // src/stores/device.js
 import { defineStore } from "pinia";
-import { getDeviceList, getRS485GatewayList, getSocketGatewayList } from "@/api/device";
+import { getDeviceList, getRS485GatewayList, getDeviceListByLab } from "@/api/device";
 import { ElMessage } from "element-plus";
 
 // 设备类型常量
@@ -35,10 +35,6 @@ export const useDeviceStore = defineStore("device", {
     rs485GatewayMap: {},
     // RS485网关加载状态
     rs485GatewayLoading: false,
-    // Socket网关列表，key: laboratoryId, value: 网关数组
-    socketGatewayMap: {},
-    // Socket网关加载状态
-    socketGatewayLoading: false,
   }),
 
   getters: {
@@ -97,7 +93,7 @@ export const useDeviceStore = defineStore("device", {
             labId: device.belongToLaboratoryId,
             airCond: device.deviceName,
             airCondSelfId: device.selfId,
-            switch: record.isOpen ? "开" : "关",
+            isOpen: record.isOpen,
             mode: record.mode || "-",
             temp: record.temperature ?? "-",
             windSpeed: record.speed !== undefined ? record.speed : "-",
@@ -142,9 +138,9 @@ export const useDeviceStore = defineStore("device", {
             lab: device.belongToLaboratoryId,
             deviceName: device.deviceName,
             address: device.address,
-            switch: record.isOpen ? "通电" : "断电",
-            isFix: record.isFix ? "是" : "否",
-            isLock: record.isLock ? "锁定" : "未锁",
+            isOpen: record.isOpen,
+            isFix: record.isFix,
+            isLock: record.isLock,
             voltage: record.voltage ?? "-",
             current: record.current ?? "-",
             power: record.power ?? "-",
@@ -180,8 +176,8 @@ export const useDeviceStore = defineStore("device", {
             lab: device.belongToLaboratoryId,
             deviceName: device.deviceName,
             selfId: device.selfId,
-            isOpen: record.isOpen ? "开" : "关",
-            isLock: record.isLock ? "锁定" : "未锁",
+            isOpen: record.isOpen,
+            isLock: record.isLock,
             online: record.origin === "Redis",
             rawDevice: device,
             rawRecord: record,
@@ -246,10 +242,10 @@ export const useDeviceStore = defineStore("device", {
             lab: device.belongToLaboratoryId,
             deviceName: device.deviceName,
             selfId: device.selfId,
-            doorStatus: record.isOpen ? "开启" : "关闭",
-            lockStatus: lockStatusMap[record.lockStatus] || "未知",
-            isLock: record.isLock ? "锁定" : "未锁",
-            delayTime: record.delayTime ?? "-",
+            isOpen: record.isOpen,
+            lockStatus: record.lockStatus,
+            isLock: record.isLock,
+            delayTime: record.delayTime,
             online: record.origin === "Redis",
             rawDevice: device,
             rawRecord: record,
@@ -368,53 +364,6 @@ export const useDeviceStore = defineStore("device", {
         sendTopic: gateway.sendTopic,
       }));
     },
-
-    // 获取所有Socket网关列表（扁平化）
-    getAllSocketGateways: (s) => {
-      const list = [];
-      Object.values(s.socketGatewayMap).forEach((arr) => {
-        list.push(...arr);
-      });
-      return list;
-    },
-
-    // 根据实验室ID获取Socket网关列表
-    getSocketGatewaysByLabId: (s) => (labId) => {
-      if (!labId) return [];
-      return s.socketGatewayMap[labId] || [];
-    },
-
-    // 获取Socket网关下拉选项（用于表单选择）
-    getSocketGatewayOptions: (s) => {
-      const options = [];
-      Object.values(s.socketGatewayMap).forEach((arr) => {
-        arr.forEach((gateway) => {
-          options.push({
-            label: `${gateway.gatewayName} (ID: ${gateway.gatewayId})`,
-            value: gateway.gatewayId,
-            labId: gateway.laboratoryId,
-            gatewayName: gateway.gatewayName,
-            ipAddress: gateway.ipAddress,
-            port: gateway.port,
-          });
-        });
-      });
-      return options;
-    },
-
-    // 根据实验室ID获取Socket网关下拉选项
-    getSocketGatewayOptionsByLabId: (s) => (labId) => {
-      if (!labId) return [];
-      const gateways = s.socketGatewayMap[labId] || [];
-      return gateways.map((gateway) => ({
-        label: `${gateway.gatewayName} (ID: ${gateway.gatewayId})`,
-        value: gateway.gatewayId,
-        labId: gateway.laboratoryId,
-        gatewayName: gateway.gatewayName,
-        ipAddress: gateway.ipAddress,
-        port: gateway.port,
-      }));
-    },
   },
 
   actions: {
@@ -507,24 +456,28 @@ export const useDeviceStore = defineStore("device", {
       this.rs485GatewayMap = {};
     },
 
-    /* ---- 获取Socket网关列表 ---- */
-    async fetchSocketGateways() {
-      this.socketGatewayLoading = true;
+    /* ---- 获取实验室下的所有设备（新接口 /device/list/all）---- */
+    async fetchDevicesByLabId(laboratoryId) {
+      this.loading = true;
       try {
-        const res = await getSocketGatewayList();
-        this.socketGatewayMap = res.data.data || {};
-        return this.socketGatewayMap;
+        const res = await getDeviceListByLab(laboratoryId);
+        const deviceList = res.data.data || [];
+        return deviceList.map(item => ({
+          id: item.id,
+          name: item.deviceName,
+          type: item.deviceType,
+          address: item.address,
+          selfId: item.selfId,
+          labId: item.belongToLaboratoryId,
+          rs485GatewayId: item.rs485GatewayId,
+          isLock: item.isLock,
+        }));
       } catch (error) {
-        ElMessage.error("获取Socket网关列表失败");
+        ElMessage.error("获取实验室设备列表失败");
         throw error;
       } finally {
-        this.socketGatewayLoading = false;
+        this.loading = false;
       }
-    },
-
-    /* ---- 清空Socket网关数据 ---- */
-    clearSocketGateways() {
-      this.socketGatewayMap = {};
     },
   },
 });

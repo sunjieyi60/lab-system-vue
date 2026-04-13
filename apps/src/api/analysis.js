@@ -1,4 +1,4 @@
-import service from "@/api/request";
+import service from "@/utils/request";
 
 /**
  * 获取空调运行时长分析数据

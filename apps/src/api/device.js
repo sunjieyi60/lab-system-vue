@@ -1,4 +1,4 @@
-import service from "@/api/request";
+import service from "@/utils/request";
 
 // 获取设备列表
 export function getDeviceList(data) {
@@ -57,5 +57,67 @@ export function getRS485GatewayList() {
   return service({
     url: "/device/list/rs485",
     method: "get",
+  });
+}
+
+// 获取Socket网关列表
+export function getSocketGatewayList() {
+  return service({
+    url: "/device/list/socket",
+    method: "get",
+  });
+}
+
+// 创建RS485网关
+export function createRS485Gateway(data) {
+  return service({
+    url: "/gateway/create/rs485",
+    method: "post",
+    data,
+  });
+}
+
+// 创建Socket网关
+export function createSocketGateway(data) {
+  return service({
+    url: "/gateway/create/socket",
+    method: "post",
+    data,
+  });
+}
+
+// 删除设备
+export function deleteDevice(deviceId) {
+  return service({
+    url: "/device/delete",
+    method: "delete",
+    data: { deviceId },
+  });
+}
+
+// 删除RS485网关
+export function deleteRS485Gateway(gatewayId) {
+  return service({
+    url: "/gateway/delete/rs485",
+    method: "delete",
+    data: { rs485GatewayId: gatewayId },
+  });
+}
+
+// 删除Socket网关
+export function deleteSocketGateway(gatewayId) {
+  return service({
+    url: "/gateway/delete/socket",
+    method: "delete",
+    data: { socketGatewayId: gatewayId },
+  });
+}
+
+// 开启设备轮询
+export function startDevicePolling(deviceId) {
+  return service({
+    url: "/device/polling/start",
+    method: "post",
+    params: { deviceId },
   });
 }

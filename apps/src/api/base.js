@@ -1,5 +1,5 @@
 // base.js
-import service from "@/api/request";
+import service from "@/utils/request";
 
 //新增单位
 export function addWorkplace(data) {
@@ -50,6 +50,28 @@ export function addLaboratory(data) {
 export function deleteLaboratory(data) {
   return service({
     url: "/laboratory/delete",
+    method: "delete",
+    data: {
+      ...data,
+    },
+  });
+}
+
+//删除单位
+export function deleteWorkplace(data) {
+  return service({
+    url: "/dept/delete",
+    method: "delete",
+    data: {
+      ...data,
+    },
+  });
+}
+
+//删除楼栋
+export function deleteBuilding(data) {
+  return service({
+    url: "/building/delete",
     method: "delete",
     data: {
       ...data,

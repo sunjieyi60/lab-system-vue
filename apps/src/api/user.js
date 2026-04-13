@@ -1,4 +1,4 @@
-import service from "./request";
+import service from "@/utils/request";
 /* 注册 */
 export function apiRegister(data) {
   return service.post("/user/register", {
@@ -32,7 +32,17 @@ export function apiCreateUser(data) {
   return service.post("/user/create", data);
 }
 
+/* 编辑用户 */
+export function apiEditUser(data) {
+  return service.put("/user/edit", data);
+}
+
 /* 删除用户 */
 export function apiDeleteUser(userId) {
   return service.delete("/user/delete", { data: { userId } });
+}
+
+/* 获取权限树 */
+export function apiGetPermissionTree() {
+  return service.get("/user/permission_tree");
 }

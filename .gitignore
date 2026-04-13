@@ -6,7 +6,8 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
+
 
 # Volume root files
 .DocumentRevisions-V100
@@ -95,3 +96,4 @@ apps/.vscode
 packages/control-kit/.vscode/extensions.json
 packages/control-kit/.vscode
 packages/quartz-kit/.vscode
+LaboratoryManagerWeb

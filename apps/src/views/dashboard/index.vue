@@ -4,63 +4,31 @@
       <!-- 左侧：两个卡片 -->
       <el-col :xs="24" :sm="24" :md="6">
         <div class="left-column">
-          <el-card class="dashboard-card">
+          <el-card class="dashboard-card lab-card">
             <template #header>
-              <span>基础管理</span>
+              <span>实验室</span>
             </template>
+            <div class="lab-stat-content">
+              <div class="stat-item">
+                <div class="stat-value">{{ userStore.userInfo?.buildings?.length || "暂无数据" }}</div>
+                <div class="stat-label">楼栋数量</div>
+              </div>
+            </div>
           </el-card>
-          <el-card
-            v-loading="facilityLoading"
-            element-loading-text="加载中..."
-            class="dashboard-card facility-card"
-          >
+          <el-card v-loading="facilityLoading" element-loading-text="加载中..." class="dashboard-card facility-card">
             <template #header>
               <span>实验室智能设施</span>
             </template>
             <div class="facility-content">
               <template v-if="facilityList.length">
-                <el-table
-                  :data="facilityList"
-                  stripe
-                  style="width: 100%"
-                  :header-cell-style="{
-                    background: '#226EE04D',
-                    color: '#333',
-                    height: '40px',
-                    fontSize: '13px',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                  }"
-                  :cell-style="{ textAlign: 'center', fontSize: '13px' }"
-                  :row-style="{ height: '44px' }"
-                >
-                  <el-table-column
-                    prop="name"
-                    label="类型"
-                    min-width="80"
-                  />
-                  <el-table-column
-                    prop="total"
-                    label="总数"
-                    min-width="60"
-                  />
-                  <el-table-column
-                    prop="open"
-                    label="开启"
-                    min-width="60"
-                  />
-                  <el-table-column
-                    prop="online"
-                    label="在线"
-                    min-width="60"
-                  />
+                <el-table :data="facilityList" stripe class="data-table full-table">
+                  <el-table-column prop="name" label="类型" min-width="80" />
+                  <el-table-column prop="total" label="总数" min-width="60" />
+                  <el-table-column prop="open" label="开启" min-width="60" />
+                  <el-table-column prop="online" label="在线" min-width="60" />
                 </el-table>
               </template>
-              <el-empty
-                v-else
-                description="暂无数据"
-                :image-size="60"
-              />
+              <el-empty v-else description="暂无数据" :image-size="60" />
             </div>
           </el-card>
         </div>
@@ -69,10 +37,39 @@
       <!-- 中间：一个卡片 -->
       <el-col :xs="24" :sm="24" :md="12">
         <div class="center-column">
-          <el-card class="dashboard-card single-card">
+          <el-card class="dashboard-card single-card" v-loading="labOverviewLoading" element-loading-text="加载中...">
             <template #header>
-              <span>控制中心</span>
+              <div class="control-header">
+                <span>实验室运行信息</span>
+                <div class="filter-selects">
+                  <el-select v-model="labFilterType" size="small" class="select-filter" @change="handleLabFilterChange">
+                    <el-option label="全部" value="all" />
+                    <el-option label="当前有课" value="hasCourse" />
+                    <el-option label="即将上课" value="soon" />
+                  </el-select>
+                  <el-select v-model="selectedSemester" size="small" class="select-semester"
+                    @change="handleSemesterChange">
+                    <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id" />
+                  </el-select>
+                </div>
+              </div>
             </template>
+            <div class="lab-table-content">
+              <el-table :data="pagedLabData" stripe class="data-table full-table">
+                <el-table-column prop="labId" label="实验室" min-width="80" />
+                <el-table-column prop="course" label="课程" min-width="120" show-overflow-tooltip />
+                <el-table-column prop="access" label="房门" min-width="60" />
+                <el-table-column prop="circuitBreak" label="空开" min-width="60" />
+                <el-table-column prop="light" label="开关" min-width="60" />
+                <el-table-column prop="airCondition" label="空调" min-width="60" />
+                <el-table-column prop="env" label="环境信息" min-width="160" show-overflow-tooltip />
+              </el-table>
+            </div>
+            <div class="pagination-wrapper">
+              <el-pagination v-model:current-page="labCurrentPage" v-model:page-size="labPageSize"
+                :page-sizes="[8, 10, 20]" layout="prev, pager, next" :total="labTotal"
+                @current-change="handleLabCurrentChange" small />
+            </div>
           </el-card>
         </div>
       </el-col>
@@ -84,12 +81,7 @@
             <template #header>
               <div class="alarm-header">
                 <span>报警信息</span>
-                <el-select
-                  v-model="timeRange"
-                  size="small"
-                  style="width: 90px"
-                  @change="handleTimeRangeChange"
-                >
+                <el-select v-model="timeRange" size="small" class="select-time" @change="handleTimeRangeChange">
                   <el-option label="最近一天" value="day" />
                   <el-option label="最近一周" value="week" />
                   <el-option label="最近一月" value="month" />
@@ -97,17 +89,9 @@
                 </el-select>
               </div>
             </template>
-            <div
-              v-loading="isLoading"
-              element-loading-text="加载中..."
-              class="alarm-content"
-            >
+            <div v-loading="isLoading" element-loading-text="加载中..." class="alarm-content">
               <template v-if="alarmData.length > 0">
-                <div
-                  v-for="(item, index) in alarmData"
-                  :key="index"
-                  class="alarm-item"
-                >
+                <div v-for="(item, index) in alarmData" :key="index" class="alarm-item">
                   <div class="alarm-time">{{ item.alarmTime }}</div>
                   <div class="alarm-text">{{ item.content }}</div>
                 </div>
@@ -115,15 +99,8 @@
               <el-empty v-else description="暂无报警数据" :image-size="80" />
             </div>
             <div class="pagination-wrapper">
-              <el-pagination
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :page-sizes="[8, 10, 20]"
-                layout="prev, pager, next"
-                :total="total"
-                @current-change="handleCurrentChange"
-                small
-              />
+              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[8, 10, 20]"
+                layout="prev, pager, next" :total="total" @current-change="handleCurrentChange" small />
             </div>
           </el-card>
         </div>
@@ -133,10 +110,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { ElMessage } from "element-plus";
+import { useUserStore, useEduStore } from "@/stores";
 import { apiGetAlarmLogs } from "@/api/log";
-import { get_overview_device_statistics } from "@/api/overview";
+import { get_overview_device_statistics, get_overview_laboratories, get_overview_laboratories_soon } from "@/api/overview";
+
+const userStore = useUserStore();
+const eduStore = useEduStore();
 
 // 报警日志数据
 const alarmData = ref([]);
@@ -150,19 +131,77 @@ const isLoading = ref(false);
 const facilityStats = ref({});
 const facilityLoading = ref(false);
 
+// 学期选择
+const termList = computed(() => eduStore.termList);
+const selectedSemester = ref(null);
+
+// 实验室概览数据
+const allLabData = ref([]);
+const overviewLabData = ref([]);
+const labOverviewLoading = ref(false);
+const labCurrentPage = ref(1);
+const labPageSize = ref(8);
+const labFilterType = ref("all");
+
+const labTotal = computed(() => overviewLabData.value?.length || 0);
+
+const labTableData = computed(() => {
+  return (overviewLabData.value || []).map((item) => ({
+    labId: item.laboratory?.laboratoryId || "-",
+    course: item.course ? course : "当前无课",
+    access: getDeviceRatio(item.devices, "Access"),
+    circuitBreak: getDeviceRatio(item.devices, "CircuitBreak"),
+    light: getDeviceRatio(item.devices, "Light"),
+    airCondition: getDeviceRatio(item.devices, "AirCondition"),
+    env: getEnvText(item.env),
+  }));
+});
+
+const pagedLabData = computed(() => {
+  const start = (labCurrentPage.value - 1) * labPageSize.value;
+  return labTableData.value.slice(start, start + labPageSize.value);
+});
+
+const handleSemesterChange = (val) => {
+  console.log("选中学期:", val);
+  loadLabData(val);
+};
+
+const handleLabFilterChange = () => {
+  loadLabData(selectedSemester.value);
+};
+
+const handleLabCurrentChange = (val) => {
+  labCurrentPage.value = val;
+};
+
+const getDeviceRatio = (devices, type) => {
+  const d = devices?.[type];
+  if (!d) return "0/0";
+  return `${d.online || 0}/${d.total || 0}`;
+};
+
+const getEnvText = (env) => {
+  if (!env || !env.data) return "-";
+  const { temperature, humidity, light } = env.data;
+  const parts = [];
+  if (temperature !== undefined && temperature !== null) parts.push(`${temperature}℃`);
+  if (humidity !== undefined && humidity !== null) parts.push(`${humidity}%`);
+  if (light !== undefined && light !== null) parts.push(`${light}Lux`);
+  return parts.join("，") || "-";
+};
+
 const deviceTypeMap = {
   Light: "照明",
   AirCondition: "空调",
-  Sensor: "传感器",
   CircuitBreak: "断路器",
   Access: "门禁",
+  Sensor: "传感器",
 };
 
-const getOpenCount = (devices) => {
-  if (!Array.isArray(devices) || !devices.length) return "-";
-  const hasRecord = devices.some((d) => d.deviceRecord !== undefined);
-  if (!hasRecord) return "-";
-  return devices.filter((d) => d.deviceRecord?.data?.isOpen === true).length;
+const getOpenCount = (value) => {
+  if (value.isOpen === null || value.isOpen === undefined) return "-";
+  return value.isOpen;
 };
 
 const facilityList = computed(() => {
@@ -171,7 +210,7 @@ const facilityList = computed(() => {
     name: deviceTypeMap[key] || key,
     total: value.total || 0,
     online: value.online || 0,
-    open: getOpenCount(value.devices),
+    open: getOpenCount(value),
   }));
 });
 
@@ -274,15 +313,79 @@ const fetchFacilityStats = async () => {
   }
 };
 
-onMounted(() => {
+// 刷新所有数据
+const refreshAllData = () => {
+  userStore.refreshUserInfo();
+  if (selectedSemester.value) {
+    loadLabData(selectedSemester.value);
+  }
   fetchAlarmLogs();
   fetchFacilityStats();
+};
+
+let refreshTimer = null;
+
+onMounted(async () => {
+  await userStore.refreshUserInfo();
+  if (eduStore.termList.length === 0) {
+    await eduStore.initTermData();
+  }
+  selectedSemester.value = eduStore.currentTerm?.id || null;
+  if (selectedSemester.value) {
+    await loadLabData(selectedSemester.value);
+  }
+  await fetchAlarmLogs();
+  await fetchFacilityStats();
+
+  refreshTimer = setInterval(() => {
+    console.log("[Dashboard] 定时刷新数据...");
+    refreshAllData();
+  }, 300000);
 });
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+    console.log("[Dashboard] 定时器已销毁");
+  }
+});
+
+// 加载实验室概览数据
+const loadLabData = async (semesterId) => {
+  if (!semesterId) return;
+  labOverviewLoading.value = true;
+  try {
+    if (labFilterType.value === "soon") {
+      const res = await get_overview_laboratories_soon(semesterId);
+      overviewLabData.value = res.data?.data || [];
+      console.log("[loadLabData] 即将上课:", res);
+    } else {
+      const res = await get_overview_laboratories(semesterId);
+      allLabData.value = res.data?.data || [];
+      if (labFilterType.value === "hasCourse") {
+        overviewLabData.value = allLabData.value.filter((item) => item.hasCourse);
+      } else {
+        overviewLabData.value = allLabData.value;
+      }
+      console.log("[loadLabData] 全部/当前有课:", res);
+    }
+    labCurrentPage.value = 1;
+    console.log("[loadLabData] 解析后数据:", overviewLabData.value);
+  } catch (error) {
+    console.error("[loadLabData] 获取实验室概览信息失败:", error);
+    ElMessage.error("获取实验室概览信息失败");
+    overviewLabData.value = [];
+  } finally {
+    labOverviewLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>
 .dashboard {
   height: 100%;
+  padding: 16px 8px;
 }
 
 .dashboard-row {
@@ -308,6 +411,21 @@ onMounted(() => {
 .single-card {
   flex: 1;
   min-height: 376px;
+  display: flex;
+  flex-direction: column;
+}
+
+.single-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  height: calc(100% - 40px);
+}
+
+.lab-table-content {
+  flex: 1;
+  overflow: hidden;
+  overflow-x: auto;
 }
 
 .alarm-card {
@@ -357,10 +475,45 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.alarm-header {
+.alarm-header,
+.control-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.filter-selects {
+  display: flex;
+  gap: 8px;
+}
+
+.lab-card :deep(.el-card__body) {
+  padding: 16px;
+  height: calc(100% - 40px);
+}
+
+.lab-stat-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #226ee0;
+  line-height: 1;
+}
+
+.stat-label {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #606266;
 }
 
 .facility-card :deep(.el-card__body) {
@@ -373,6 +526,7 @@ onMounted(() => {
   flex-direction: column;
   justify-content: center;
   height: 100%;
+  overflow-x: auto;
 }
 
 .facility-content :deep(.el-table) {
@@ -380,16 +534,44 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.dashboard-card :deep(.el-card__body) {
-  padding: 24px;
+.data-table.full-table {
+  width: 100%;
+  height: 100%;
 }
 
-.alarm-card :deep(.el-card__body) {
-  padding: 12px;
+.data-table :deep(.el-table__header-wrapper th.el-table__cell) {
+  background: #226EE04D;
+  color: #333;
+  height: 40px;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.data-table :deep(.el-table__cell) {
+  text-align: center;
+  font-size: 13px;
+}
+
+.data-table :deep(.el-table__row) {
+  height: 44px;
+}
+
+.select-filter {
+  width: 110px;
+}
+
+.select-semester {
+  width: 180px;
+}
+
+.select-time {
+  width: 90px;
 }
 
 /* 响应式：小屏幕时调整 */
 @media (max-width: 768px) {
+
   .dashboard-card,
   .single-card,
   .alarm-card {

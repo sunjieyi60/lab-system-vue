@@ -6,7 +6,7 @@
     <!-- 右侧主内容 -->
     <div class="right-container">
       <!-- 顶部二级菜单 -->
-      <div class="app-header">
+      <div v-if="!route.meta?.hideSubMenu" class="app-header">
         <AppHeader />
       </div>
 
@@ -19,8 +19,11 @@
 </template>
 
 <script setup>
+import { useRoute } from "vue-router";
 import Slider from "@/components/common/slider.vue";
 import AppHeader from "@/components/common/AppHeader.vue";
+
+const route = useRoute();
 </script>
 
 <style scoped>
@@ -66,9 +69,10 @@ import AppHeader from "@/components/common/AppHeader.vue";
 .main-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  /* flex: 1; */
-  /* padding: 0px 16px 0px 16px; */
+  flex: 1;
+  overflow-y: auto;
+  background-color: #ffffff;
+  padding: 0px 16px;
 }
 
 /* .is-active::before 的 z-index: -1 正常生效 */

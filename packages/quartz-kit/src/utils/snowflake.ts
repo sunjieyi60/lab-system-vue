@@ -133,7 +133,7 @@ export function createEmptyScheduleConfig(laboratoryId: number): import('../type
       weekdays: [1, 2, 3, 4, 5],  // 默认工作日，与学期无关
       startWeek: 1,
       endWeek: 16,
-      weekType: 'ALL' as import('../types/quartz').WeekType,
+      weekType: 'Both' as import('../types/quartz').WeekType,
     },
     dataGroup: [],
     conditionGroups: [],

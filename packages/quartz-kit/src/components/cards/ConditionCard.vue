@@ -97,11 +97,12 @@
 
 <script setup lang="ts">
 import { Filter, Plus, Delete, InfoFilled } from '@element-plus/icons-vue'
-import type { ConditionGroup, Condition, DataSource, Device } from '../../types/quartz'
+import type { ConditionGroup, Condition, DataSource, Device, DeviceType } from '../../types/quartz'
 import ConditionEditor from '../ConditionEditor.vue'
 import type { ConditionRule } from '../../types/deviceProperties'
+import { getPropertyByName, Operators } from '../../types/deviceProperties'
 
-defineProps<{
+const props = defineProps<{
   conditionGroups: ConditionGroup[]
   dataSources: DataSource[]
   devices: Device[]
@@ -115,32 +116,69 @@ const emit = defineEmits<{
   removeCondition: [groupIndex: number, conditionIndex: number]
 }>()
 
+// 设备类型中文映射
+const DeviceTypeNameMap: Record<string, string> = {
+  'AirCondition': '空调',
+  'CircuitBreak': '断路器',
+  'Light': '照明',
+  'Sensor': '传感器',
+  'Access': '门禁',
+}
+
 function onConditionChange(condition: Condition, rule: ConditionRule) {
   // 可以在这里添加额外的逻辑，如自动填充描述
-  if (!condition.desc && rule.property) {
-    const deviceType = getDeviceTypeFromDataSource(rule.dataSourceId)
-    if (deviceType) {
-      condition.desc = generateAutoDesc(rule, deviceType)
+  if (!condition.desc && rule.property && rule.dataSourceId) {
+    condition.desc = generateAutoDesc(rule)
+  }
+}
+
+function getDeviceTypeFromDataSource(dataSourceId: string): DeviceType | undefined {
+  const dataSource = props.dataSources.find(ds => ds.id === dataSourceId)
+  return dataSource?.deviceType
+}
+
+function getDeviceNameFromDataSource(dataSourceId: string): string {
+  const dataSource = props.dataSources.find(ds => ds.id === dataSourceId)
+  if (!dataSource) return '未知设备'
+  const device = props.devices.find(d => d.id === dataSource.deviceId)
+  return device?.name || `设备${dataSource.deviceId}`
+}
+
+function generateAutoDesc(rule: ConditionRule): string {
+  // 1. 获取设备类型名称
+  const deviceType = getDeviceTypeFromDataSource(rule.dataSourceId)
+  const deviceTypeName = deviceType ? DeviceTypeNameMap[deviceType] || deviceType : '未知类型'
+  
+  // 2. 获取设备名称
+  const deviceName = getDeviceNameFromDataSource(rule.dataSourceId)
+  
+  // 3. 获取属性名称
+  let propertyName = rule.property
+  if (deviceType) {
+    const propertyDef = getPropertyByName(deviceType, rule.property)
+    if (propertyDef) {
+      propertyName = propertyDef.label
     }
   }
-}
-
-function getDeviceTypeFromDataSource(_dataSourceId: string): string | undefined {
-  // 这个方法在 ConditionEditor 内部已经处理了，这里简化处理
-  return undefined
-}
-
-function generateAutoDesc(rule: ConditionRule, deviceType: string): string {
-  const operatorMap: Record<string, string> = {
-    '==': '等于',
-    '!=': '不等于',
-    '>': '大于',
-    '>=': '大于等于',
-    '<': '小于',
-    '<=': '小于等于',
+  
+  // 4. 获取操作符中文
+  const operatorDef = Operators.find(op => op.value === rule.operator)
+  const operatorName = operatorDef?.label || rule.operator
+  
+  // 5. 获取值名称（处理枚举值）
+  let valueName = String(rule.value)
+  if (deviceType) {
+    const propertyDef = getPropertyByName(deviceType, rule.property)
+    if (propertyDef?.enumValues) {
+      const enumItem = propertyDef.enumValues.find(e => String(e.value) === String(rule.value))
+      if (enumItem) {
+        valueName = enumItem.label
+      }
+    }
   }
   
-  return `${deviceType} ${rule.property} ${operatorMap[rule.operator] || rule.operator} ${rule.value}`
+  // 格式：设备类型 设备名称 属性名称 操作 值名称
+  return `${deviceTypeName} ${deviceName} ${propertyName} ${operatorName} ${valueName}`
 }
 </script>
 

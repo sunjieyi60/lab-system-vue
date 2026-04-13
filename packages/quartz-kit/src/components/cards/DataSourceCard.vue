@@ -38,7 +38,7 @@
           :icon="Delete"
           size="small"
           circle
-          @click="emit('remove', index)"
+          @click="emit('remove', index, dataSource.id)"
         />
       </div>
       <el-row :gutter="20">
@@ -89,7 +89,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   add: []
-  remove: [index: number]
+  remove: [index: number, dataSourceId: string]
   updateDevice: [index: number, deviceId: number]
 }>()
 

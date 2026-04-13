@@ -53,3 +53,21 @@ export function cancelQuartz(taskId) {
     params: { taskId },
   });
 }
+
+// 更新定时任务
+export function updateQuartz(data) {
+  return service({
+    url: "/quartz/update",
+    method: "put",
+    data,
+  });
+}
+
+// 从课表生成定时任务
+export function generateFromCourseSchedule(data) {
+  return service({
+    url: "/quartz/generate-from-course-schedule",
+    method: "post",
+    data,
+  });
+}

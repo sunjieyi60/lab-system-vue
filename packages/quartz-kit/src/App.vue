@@ -235,7 +235,7 @@ import type {
   Semester,
   FormMode,
 } from './types/quartz'
-import { DeviceType, CommandLine, ConditionGroupType, AlarmType, WeekType } from './types/quartz'
+import { DeviceType, CommandLine, ConditionGroupType, AlarmType } from './types/quartz'
 import { generateSnowflakeId } from './utils/snowflake'
 
 // ============================================
@@ -300,7 +300,7 @@ function createMockTask(index: number): ScheduleConfigRoot {
       weekdays: [1, 2, 3, 4, 5],
       startWeek: 1,
       endWeek: 16,
-      weekType: WeekType.ALL,
+      weekType: 'Both',
       startTime: '08:00:00',
       endTime: '18:00:00',
     },

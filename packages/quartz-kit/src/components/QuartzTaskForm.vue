@@ -30,7 +30,7 @@
         :readonly="isViewMode"
         :laboratory-id="form.formData.task.laboratoryId"
         @add="handleAddDataSource"
-        @remove="form.removeDataSource"
+        @remove="handleRemoveDataSource"
         @update-device="handleUpdateDataSourceDevice"
       />
 
@@ -204,6 +204,27 @@ watch(() => form.formData, () => {
 // 数据源操作
 function handleAddDataSource() {
   form.addDataSource()
+}
+
+function handleRemoveDataSource(index: number, dataSourceId: string) {
+  // 先删除数据源
+  form.removeDataSource(index)
+  
+  // 清理条件组中引用该数据源的条件
+  const conditionGroups = form.formData.conditionGroups
+  for (let gi = conditionGroups.length - 1; gi >= 0; gi--) {
+    const group = conditionGroups[gi]
+    // 从后往前遍历条件，避免删除时索引变化
+    for (let ci = group.conditions.length - 1; ci >= 0; ci--) {
+      const condition = group.conditions[ci]
+      // 检查条件表达式是否引用了被删除的数据源ID
+      if (condition.expr.includes(`#{${dataSourceId}}`)) {
+        form.removeCondition(gi, ci)
+      }
+    }
+  }
+  
+  ElMessage.info('已清理关联的条件设置')
 }
 
 function handleUpdateDataSourceDevice(index: number, deviceId: number) {

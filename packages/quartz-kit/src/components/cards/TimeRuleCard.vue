@@ -136,13 +136,13 @@ function handleSemesterChange(semesterId: number | '') {
     props.timeRule.semesterId = semesterId
     props.timeRule.startWeek = 1
     props.timeRule.endWeek = 16
-    props.timeRule.weekType = 'ALL'
+    props.timeRule.weekType = 'Both'
   } else {
     // 清除学期时，仅重置周次相关字段
     props.timeRule.semesterId = undefined
     props.timeRule.startWeek = 1
     props.timeRule.endWeek = 16
-    props.timeRule.weekType = 'ALL'
+    props.timeRule.weekType = 'Both'
     // 注意：weekdays 和 timeRange 不受影响！
   }
 }

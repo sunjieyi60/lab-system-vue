@@ -27,39 +27,60 @@
         />
       </el-dialog>
 
+      <!-- 课表生成对话框 -->
+      <el-dialog
+        v-model="courseScheduleDialogVisible"
+        title="从课表生成定时任务"
+        width="80%"
+        top="5vh"
+        :close-on-click-modal="false"
+        destroy-on-close
+      >
+        <CourseScheduleTaskForm
+          v-if="courseScheduleDialogVisible"
+          :laboratories="availableLaboratories"
+          :loading="courseScheduleLoading"
+          @submit="handleCourseScheduleSubmit"
+          @cancel="handleCourseScheduleCancel"
+        />
+      </el-dialog>
+
       <!-- 操作栏 -->
       <div class="operation-bar">
         <div class="left-buttons">
           <el-button type="primary" plain @click="handleAdd">添加</el-button>
+          <el-button type="info" plain @click="handleGenerateFromCourse">从课表生成</el-button>
           <el-button type="danger" plain @click="handleDelete">删除</el-button>
           <el-button type="success" plain @click="handleBatchEnable">批量启用</el-button>
           <el-button type="warning" plain @click="handleBatchDisable">批量禁用</el-button>
         </div>
+        
+        <div style="display: flex;">
+          <div class="search-box">
+            <el-input
+              v-model="searchKey"
+              placeholder="请输入关键字"
+              class="search-input"
+              @keyup.enter="handleSearch"
+            >
+              <template #suffix>
+                <el-icon class="search-icon" @click="handleSearch">
+                  <Search />
+                </el-icon>
+              </template>
+            </el-input>
+          </div>
 
-        <div class="search-box">
-          <el-input
-            v-model="searchKey"
-            placeholder="请输入关键字"
-            class="search-input"
-            @keyup.enter="handleSearch"
-          >
-            <template #suffix>
-              <el-icon class="search-icon" @click="handleSearch">
-                <Search />
-              </el-icon>
-            </template>
-          </el-input>
-        </div>
-
-        <div class="stat-info">
-          <span class="stat-item">
-            <span class="stat-dot black"></span>
-            共 {{ tableData.length }} 条
-          </span>
-          <span class="stat-item">
-            <span class="stat-dot green"></span>
-            启用 {{ enabledCount }} 条
-          </span>
+          <div class="stat-info">
+            <span class="stat-item">
+              <span class="stat-dot black"></span>
+              共 {{ tableData.length }} 条
+            </span>
+            <span class="stat-item">
+              <span class="stat-dot green"></span>
+              启用 {{ enabledCount }} 条
+            </span>
+          </div>
         </div>
       </div>
 
@@ -140,8 +161,9 @@ import { useUserStore } from "@/stores/user.js";
 import { useSmartControlStore } from "@/stores/smartControl";
 import { useDeviceStore } from "@/stores/device";
 import { useEduStore } from "@/stores/edu.js";
-import { createQuartz, deleteQuartz, enableQuartz, cancelQuartz } from "@/api/smartControl.js";
+// 不再直接导入API，使用store方法
 import QuartzTaskForm from "@packages/quartz-kit/src/components/QuartzTaskForm.vue";
+import CourseScheduleTaskForm from "@packages/quartz-kit/src/components/CourseScheduleTaskForm.vue";
 
 const userStore = useUserStore();
 const smartControlStore = useSmartControlStore();
@@ -163,6 +185,10 @@ const formDialogVisible = ref(false);
 const formMode = ref("create");
 const formLoading = ref(false);
 const currentEditData = ref(null);
+
+// 课表生成对话框相关
+const courseScheduleDialogVisible = ref(false);
+const courseScheduleLoading = ref(false);
 
 // 当前选中的实验室ID（用于表单）
 const selectedLabId = ref(0);
@@ -347,6 +373,33 @@ const handleAdd = async () => {
   formDialogVisible.value = true;
 };
 
+// 从课表生成
+const handleGenerateFromCourse = () => {
+  courseScheduleDialogVisible.value = true;
+};
+
+// 课表生成提交
+const handleCourseScheduleSubmit = async (data) => {
+  courseScheduleLoading.value = true;
+  try {
+    await smartControlStore.generateFromCourseSchedule(data);
+    ElMessage.success("课表任务生成成功");
+    courseScheduleDialogVisible.value = false;
+    // 刷新列表
+    loadStrategyData();
+  } catch (error) {
+    console.error("课表生成失败:", error);
+    // 错误消息已在store中显示
+  } finally {
+    courseScheduleLoading.value = false;
+  }
+};
+
+// 课表生成取消
+const handleCourseScheduleCancel = () => {
+  courseScheduleDialogVisible.value = false;
+};
+
 // 行内编辑
 const handleEditRow = async (row) => {
   formMode.value = "edit";
@@ -363,18 +416,15 @@ const handleFormSubmit = async ({ isCreate, data }) => {
   formLoading.value = true;
   try {
     if (isCreate) {
-      await createQuartz(data);
-      ElMessage.success("策略创建成功");
+      await smartControlStore.createStrategy(data);
     } else {
-      // 编辑逻辑 - 如果需要更新API，这里调用更新接口
-      // await updateQuartz(data);
-      ElMessage.success("策略更新成功");
+      await smartControlStore.updateStrategy(data);
     }
     formDialogVisible.value = false;
     loadStrategyData();
   } catch (error) {
     console.error(isCreate ? "创建策略失败:" : "更新策略失败:", error);
-    ElMessage.error(error.message || (isCreate ? "创建策略失败" : "更新策略失败"));
+    // 错误消息已在store中显示
   } finally {
     formLoading.value = false;
   }
@@ -392,13 +442,12 @@ const handleBatchEnable = async () => {
     return;
   }
   try {
-    const enablePromises = selectedRows.value.map((row) => enableQuartz(row.taskId));
-    await Promise.all(enablePromises);
-    ElMessage.success(`已启用 ${selectedRows.value.length} 条策略`);
-    loadStrategyData();
+    const taskIds = selectedRows.value.map((row) => row.taskId);
+    await smartControlStore.batchEnableStrategy(taskIds);
+    // 不需要重新加载，store已更新本地状态
   } catch (error) {
     console.error("批量启用失败:", error);
-    ElMessage.error(error.message || "启用失败");
+    // 错误消息已在store中显示
   }
 };
 
@@ -409,13 +458,12 @@ const handleBatchDisable = async () => {
     return;
   }
   try {
-    const cancelPromises = selectedRows.value.map((row) => cancelQuartz(row.taskId));
-    await Promise.all(cancelPromises);
-    ElMessage.success(`已禁用 ${selectedRows.value.length} 条策略`);
-    loadStrategyData();
+    const taskIds = selectedRows.value.map((row) => row.taskId);
+    await smartControlStore.batchDisableStrategy(taskIds);
+    // 不需要重新加载，store已更新本地状态
   } catch (error) {
     console.error("批量禁用失败:", error);
-    ElMessage.error(error.message || "禁用失败");
+    // 错误消息已在store中显示
   }
 };
 
@@ -423,15 +471,16 @@ const handleBatchDisable = async () => {
 const handleStatusChange = async (row, val) => {
   try {
     if (val === "启用") {
-      await enableQuartz(row.taskId);
+      await smartControlStore.enableStrategy(row.taskId);
     } else {
-      await cancelQuartz(row.taskId);
+      await smartControlStore.disableStrategy(row.taskId);
     }
     ElMessage.success(`策略"${row.strategyName}"已${val === "启用" ? "启用" : "禁用"}`);
-    loadStrategyData();
+    // store已更新本地状态，不需要重新加载
   } catch (error) {
     console.error("状态切换失败:", error);
-    ElMessage.error(error.message || "操作失败");
+    // 错误消息已在store中显示
+    // 恢复原状态
     row.status = val === "启用" ? "禁用" : "启用";
   }
 };
@@ -449,14 +498,13 @@ const handleDelete = async () => {
       "提示",
       { type: "warning" }
     );
-    const deletePromises = selection.map((row) => deleteQuartz(row.taskId));
-    await Promise.all(deletePromises);
-    ElMessage.success(`成功删除 ${selection.length} 条策略`);
-    loadStrategyData();
+    const taskIds = selection.map((row) => row.taskId);
+    await smartControlStore.batchDeleteStrategy(taskIds);
+    // store已更新本地状态，不需要重新加载
   } catch (error) {
     if (error !== "cancel") {
       console.error("批量删除失败:", error);
-      ElMessage.error(error.message || "删除失败");
+      // 错误消息已在store中显示
     }
   }
 };
@@ -510,6 +558,7 @@ onMounted(async () => {
   padding: 16px 20px;
   border-radius: 4px;
   border: 1px solid #e8e8e8;
+  justify-content: space-between;
 }
 
 .left-buttons {
@@ -540,6 +589,7 @@ onMounted(async () => {
   display: flex;
   gap: 20px;
   align-items: center;
+  margin-left: 2rem;
 }
 
 .stat-item {

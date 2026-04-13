@@ -7,10 +7,10 @@
   >
     <el-form label-width="100px">
       <el-form-item label="设备地址">
-        <el-input-number v-model="formData.address" :min="0" :max="255" />
+        <el-input-number v-model="formData.address" :min="0" :max="255" disabled />
       </el-form-item>
       <el-form-item label="子设备ID">
-        <el-input-number v-model="formData.selfId" :min="0" :max="255" />
+        <el-input-number v-model="formData.selfId" :min="0" :max="255" disabled />
       </el-form-item>
       <el-form-item label="开关">
         <el-radio-group v-model="formData.power">

@@ -313,6 +313,7 @@ watch(
   (data) => {
     if (data && props.mode === 'edit') {
       const device = data as any
+      formData.deviceId = device.id
       formData.deviceType = device.deviceType as DeviceType
       formData.deviceName = device.deviceName
       formData.belongToLaboratoryId = device.belongToLaboratoryId

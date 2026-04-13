@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { useUserStore, useEduStore } from "@/stores";
 import { apiGetAlarmLogs } from "@/api/log";
@@ -313,17 +313,42 @@ const fetchFacilityStats = async () => {
   }
 };
 
-onMounted(async () => {
+// 刷新所有数据
+const refreshAllData = () => {
   userStore.refreshUserInfo();
-  if (eduStore.termList.length === 0) {
-    await eduStore.initTermData();
-  }
-  selectedSemester.value = eduStore.currentTerm?.id || null;
   if (selectedSemester.value) {
     loadLabData(selectedSemester.value);
   }
   fetchAlarmLogs();
   fetchFacilityStats();
+};
+
+let refreshTimer = null;
+
+onMounted(async () => {
+  await userStore.refreshUserInfo();
+  if (eduStore.termList.length === 0) {
+    await eduStore.initTermData();
+  }
+  selectedSemester.value = eduStore.currentTerm?.id || null;
+  if (selectedSemester.value) {
+    await loadLabData(selectedSemester.value);
+  }
+  await fetchAlarmLogs();
+  await fetchFacilityStats();
+
+  refreshTimer = setInterval(() => {
+    console.log("[Dashboard] 定时刷新数据...");
+    refreshAllData();
+  }, 300000);
+});
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+    console.log("[Dashboard] 定时器已销毁");
+  }
 });
 
 // 加载实验室概览数据

@@ -1,45 +1,61 @@
-<!-- src/App.vue -->
 <template>
-  <div class="global-header">
-    <!-- 左侧系统名称与Logo -->
-    <div class="global-header">
-      <img src="/images/学校.png" alt="学校 logo" class="logo" />
-      <span>实验室综合管理系统</span>
-    </div>
-    <!-- 右侧用户信息与窗口控制 -->
-    <div class="global-header">
-      <span>{{ userStore.userInfo.realName }}，欢迎您！</span>
+  <div class="app-container">
+    <!-- 只在非登录/注册页面显示顶部导航栏 -->
+    <GlobalHeader v-if="showHeader" />
+    <div class="app-content" :class="{ 'has-header': showHeader }">
+      <router-view />
     </div>
   </div>
-  <router-view />
 </template>
 
 <script setup>
-import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import GlobalHeader from "@/components/common/GlobalHeader.vue";
 
-const userStore = useUserStore();
-const router = useRouter();
+const route = useRoute();
+
+// 不显示顶部导航栏的页面路径
+const noHeaderRoutes = ["/login", "/register"];
+
+// 是否显示顶部导航栏
+const showHeader = computed(() => {
+  return !noHeaderRoutes.includes(route.path);
+});
 </script>
 
-<style scoped>
-.global-header {
-  /* 1. 黑色字 */
-  color: #000;
-
-  /* 2. 高度：手机 48px → 桌面 64px，一行搞定 */
-  height: clamp(48px, 6vw, 64px);
-
-  /* 3. 垂直居中：flex 就够了 */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px; /* 想再省代码，padding 都可以不要 */
+<style>
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.logo {
-  height: 80%; /* 随高度等比缩放，无需计算 */
-  max-height: 36px; /* 防过大 */
-  margin-right: 12px; /* 图片右侧与文字的间距，可根据需要调整数值 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f5f7fa;
+  overflow: hidden; /* 禁止 body 滚动 */
+}
+
+#app {
+  height: 100vh;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-content.has-header {
+  /* 当有 header 时，内容区域自动填充剩余空间 */
+  height: calc(100vh - 64px);
 }
 </style>

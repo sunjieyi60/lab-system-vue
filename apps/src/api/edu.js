@@ -1,4 +1,4 @@
-import service from "@/api/request";
+import service from "@/utils/request";
 
 /* 教务数据分析 */
 export function getEduAnalysisChart(params) {
@@ -6,6 +6,7 @@ export function getEduAnalysisChart(params) {
 }
 
 /* 关于学期 */
+//获取学期列表
 export function getTerm() {
   return service.get("/academic/list/semester");
 }

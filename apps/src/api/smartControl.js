@@ -1,4 +1,4 @@
-import service from "@/api/request";
+import service from "@/utils/request";
 
 // 获取定时任务列表
 export function getQuartzList(params = {}) {
@@ -23,6 +23,15 @@ export function createQuartz(data) {
   return service({
     url: "/quartz/create",
     method: "post",
+    data,
+  });
+}
+
+// 更新定时任务策略
+export function updateQuartz(data) {
+  return service({
+    url: "/quartz/update",
+    method: "put",
     data,
   });
 }

@@ -93,7 +93,15 @@
               <template v-if="alarmData.length > 0">
                 <div v-for="(item, index) in alarmData" :key="index" class="alarm-item">
                   <div class="alarm-time">{{ item.alarmTime }}</div>
-                  <div class="alarm-text">{{ item.content }}</div>
+                  <el-tooltip
+                    v-if="item.content && item.content.length > 40"
+                    :content="item.content"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <div class="alarm-text">{{ item.content }}</div>
+                  </el-tooltip>
+                  <div v-else class="alarm-text">{{ item.content }}</div>
                 </div>
               </template>
               <el-empty v-else description="暂无报警数据" :image-size="80" />
@@ -122,7 +130,7 @@ const eduStore = useEduStore();
 // 报警日志数据
 const alarmData = ref([]);
 const currentPage = ref(1);
-const pageSize = ref(8);
+const pageSize = ref(10);
 const total = ref(0);
 const timeRange = ref("week");
 const isLoading = ref(false);
@@ -444,12 +452,14 @@ const loadLabData = async (semesterId) => {
 
 .alarm-content {
   flex: 1;
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .alarm-item {
   padding: 10px 0;
   border-bottom: 1px solid #f0f0f0;
+  min-width: 100%;
 }
 
 .alarm-item:last-child {
@@ -466,6 +476,9 @@ const loadLabData = async (semesterId) => {
   font-size: 13px;
   color: #333;
   line-height: 1.4;
+  white-space: nowrap;
+  display: inline-block;
+  min-width: 100%;
 }
 
 .pagination-wrapper {

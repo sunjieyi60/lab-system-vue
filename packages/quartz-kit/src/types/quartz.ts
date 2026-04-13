@@ -2,43 +2,107 @@
 // Quartz 定时任务表单类型定义
 // ============================================
 
-/** 设备类型枚举 */
-export enum DeviceType {
-  AirCondition = 'AirCondition',
-  CircuitBreak = 'CircuitBreak',
-  Light = 'Light',
-  Sensor = 'Sensor',
-  Access = 'Access',
+/** 设备类型 */
+export type DeviceType = 'AirCondition' | 'CircuitBreak' | 'Light' | 'Sensor' | 'Access'
+
+/** 设备类型常量 */
+export const DeviceType = {
+  AirCondition: 'AirCondition' as const,
+  CircuitBreak: 'CircuitBreak' as const,
+  Light: 'Light' as const,
+  Sensor: 'Sensor' as const,
+  Access: 'Access' as const,
 }
 
-/** 指令行枚举 */
-export enum CommandLine {
-  OPEN_AIR_CONDITION_RS485 = 'OPEN_AIR_CONDITION_RS485',
-  CLOSE_AIR_CONDITION_RS485 = 'CLOSE_AIR_CONDITION_RS485',
-  ENHANCE_CONTROL_AIR_CONDITION = 'ENHANCE_CONTROL_AIR_CONDITION',
-  OPEN_CIRCUIT_BREAK = 'OPEN_CIRCUIT_BREAK',
-  CLOSE_CIRCUIT_BREAK = 'CLOSE_CIRCUIT_BREAK',
-  OPEN_LIGHT = 'OPEN_LIGHT',
-  CLOSE_LIGHT = 'CLOSE_LIGHT',
+/** 指令行类型 */
+export type CommandLine = 
+  // 空调控制
+  | 'OPEN_AIR_CONDITION_RS485'
+  | 'CLOSE_AIR_CONDITION_RS485'
+  | 'ENHANCE_CONTROL_AIR_CONDITION'
+  | 'REQUEST_AIR_CONDITION_DATA_RS485'
+  // 断路器控制
+  | 'OPEN_CIRCUITBREAK'
+  | 'CLOSE_CIRCUITBREAK'
+  | 'REQUEST_CIRCUITBREAK_DATA'
+  // 照明控制
+  | 'OPEN_LIGHT'
+  | 'CLOSE_LIGHT'
+  | 'REQUEST_LIGHT_DATA'
+  // 门禁控制
+  | 'OPEN_ACCESS_ONCE'
+  | 'CLOSE_ACCESS_ONCE'
+  | 'REQUEST_ACCESS_DATA'
+  | 'OPEN_ACCESS_PERSIST_LOCK'
+  | 'OPEN_ACCESS_PERSIST_UNLOCK'
+  | 'OPEN_ACCESS_PERSIST_KEEP'
+  | 'CLOSE_ACCESS_PERSIST_LOCK'
+  | 'CLOSE_ACCESS_PERSIST_UNLOCK'
+  | 'CLOSE_ACCESS_PERSIST_KEEP'
+  | 'KEEP_ACCESS_STATUS_LOCK'
+  | 'KEEP_ACCESS_STATUS_UNLOCK'
+  | 'SET_ACCESS_DELAY'
+  // 传感器控制
+  | 'REQUEST_SENSOR_DATA'
+
+/** 指令行常量 */
+export const CommandLine = {
+  // 空调控制
+  OPEN_AIR_CONDITION_RS485: 'OPEN_AIR_CONDITION_RS485' as const,
+  CLOSE_AIR_CONDITION_RS485: 'CLOSE_AIR_CONDITION_RS485' as const,
+  ENHANCE_CONTROL_AIR_CONDITION: 'ENHANCE_CONTROL_AIR_CONDITION' as const,
+  REQUEST_AIR_CONDITION_DATA_RS485: 'REQUEST_AIR_CONDITION_DATA_RS485' as const,
+  // 断路器控制
+  OPEN_CIRCUITBREAK: 'OPEN_CIRCUITBREAK' as const,
+  CLOSE_CIRCUITBREAK: 'CLOSE_CIRCUITBREAK' as const,
+  REQUEST_CIRCUITBREAK_DATA: 'REQUEST_CIRCUITBREAK_DATA' as const,
+  // 照明控制
+  OPEN_LIGHT: 'OPEN_LIGHT' as const,
+  CLOSE_LIGHT: 'CLOSE_LIGHT' as const,
+  REQUEST_LIGHT_DATA: 'REQUEST_LIGHT_DATA' as const,
+  // 门禁控制
+  OPEN_ACCESS_ONCE: 'OPEN_ACCESS_ONCE' as const,
+  CLOSE_ACCESS_ONCE: 'CLOSE_ACCESS_ONCE' as const,
+  REQUEST_ACCESS_DATA: 'REQUEST_ACCESS_DATA' as const,
+  OPEN_ACCESS_PERSIST_LOCK: 'OPEN_ACCESS_PERSIST_LOCK' as const,
+  OPEN_ACCESS_PERSIST_UNLOCK: 'OPEN_ACCESS_PERSIST_UNLOCK' as const,
+  OPEN_ACCESS_PERSIST_KEEP: 'OPEN_ACCESS_PERSIST_KEEP' as const,
+  CLOSE_ACCESS_PERSIST_LOCK: 'CLOSE_ACCESS_PERSIST_LOCK' as const,
+  CLOSE_ACCESS_PERSIST_UNLOCK: 'CLOSE_ACCESS_PERSIST_UNLOCK' as const,
+  CLOSE_ACCESS_PERSIST_KEEP: 'CLOSE_ACCESS_PERSIST_KEEP' as const,
+  KEEP_ACCESS_STATUS_LOCK: 'KEEP_ACCESS_STATUS_LOCK' as const,
+  KEEP_ACCESS_STATUS_UNLOCK: 'KEEP_ACCESS_STATUS_UNLOCK' as const,
+  SET_ACCESS_DELAY: 'SET_ACCESS_DELAY' as const,
+  // 传感器控制
+  REQUEST_SENSOR_DATA: 'REQUEST_SENSOR_DATA' as const,
 }
 
-/** 条件组类型枚举 */
-export enum ConditionGroupType {
-  ALL = 'ALL',
-  ANY = 'ANY',
+/** 条件组类型 */
+export type ConditionGroupType = 'ALL' | 'ANY'
+
+/** 条件组类型常量 */
+export const ConditionGroupType = {
+  ALL: 'ALL' as const,
+  ANY: 'ANY' as const,
 }
 
-/** 报警类型枚举 */
-export enum AlarmType {
-  SMS = 'SMS',
-  SMTP = 'SMTP',
+/** 报警类型 */
+export type AlarmType = 'SMS' | 'SMTP'
+
+/** 报警类型常量 */
+export const AlarmType = {
+  SMS: 'SMS' as const,
+  SMTP: 'SMTP' as const,
 }
 
-/** 周类型枚举 */
-export enum WeekType {
-  ALL = 'ALL',
-  ODD = 'ODD',
-  EVEN = 'EVEN',
+/** 周类型 */
+export type WeekType = 'Both' | 'Single' | 'Double'
+
+/** 周类型常量 */
+export const WeekType = {
+  ALL: 'Both' as const,
+  ODD: 'Single' as const,
+  EVEN: 'Double' as const,
 }
 
 /** 设备信息（用于选择） */
@@ -48,6 +112,7 @@ export interface Device {
   type: DeviceType;
   address?: number;
   selfId?: number;
+  labId?: number; // 所属实验室ID，用于过滤
 }
 
 /** 用户信息（用于报警配置） */
@@ -62,6 +127,9 @@ export interface User {
 export interface Semester {
   id: number;
   name: string;
+  startDate?: string;    // 学期开始日期 yyyy-MM-dd
+  endDate?: string;      // 学期结束日期 yyyy-MM-dd
+  totalWeeks?: number;   // 学期总周数
 }
 
 // ============================================
@@ -127,7 +195,7 @@ export interface DataSource {
 export interface TimeRule {
   id: string;
   scheduleTaskId: string;  // 【必须】
-  semesterId: number;
+  semesterId?: number;     // 学期ID（可选），选择后周次相关参数才有效
   weekdays: number[];      // [1,2,3,4,5,6,7]
   startWeek: number;
   endWeek: number;

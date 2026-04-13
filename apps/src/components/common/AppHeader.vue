@@ -41,7 +41,7 @@ const menuMap = {
     { title: "电气监控", index: "/control/electric" },
     { title: "电灯开关监控", index: "/control/light" },
     { title: "环境监控", index: "/control/env" },
-    { title: "网关管理", index: "/control/gateway" },
+    { title: "设备管理", index: "/control/device" },
     { title: "智控设备", index: "/control/intelligent" },
   ],
   "/data": [
@@ -84,6 +84,8 @@ const currentRoute = computed(() => route.path);
 }
 :deep(.el-menu--horizontal) {
   border-bottom: none !important;
+  display: flex;
+  gap: 2rem;
 }
 
 /* 1. 每个选项加矩形框 + 统一字体样式 */

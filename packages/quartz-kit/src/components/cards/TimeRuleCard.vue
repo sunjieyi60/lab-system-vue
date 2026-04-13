@@ -7,13 +7,16 @@
       </div>
     </template>
     
+    <!-- 第一行：学期 + 周次范围 -->
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-form-item label="学期" required>
+        <el-form-item label="学期（可选）">
           <el-select
             v-model="timeRule.semesterId"
-            placeholder="选择学期"
+            placeholder="选择学期以启用周次"
+            clearable
             style="width: 100%"
+            @change="handleSemesterChange"
           >
             <el-option
               v-for="sem in semesters"
@@ -25,31 +28,40 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="开始周" required>
+        <el-form-item label="开始周">
           <el-input-number
             v-model="timeRule.startWeek"
             :min="1"
             :max="25"
+            :disabled="!hasSemester"
+            placeholder="选择学期后可用"
             style="width: 100%"
           />
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="结束周" required>
+        <el-form-item label="结束周">
           <el-input-number
             v-model="timeRule.endWeek"
             :min="timeRule.startWeek"
             :max="25"
+            :disabled="!hasSemester"
+            placeholder="选择学期后可用"
             style="width: 100%"
           />
         </el-form-item>
       </el-col>
     </el-row>
 
+    <!-- 第二行：单双周 + 生效星期 -->
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-form-item label="单双周" required>
-          <el-select v-model="timeRule.weekType" style="width: 100%">
+        <el-form-item label="单双周">
+          <el-select 
+            v-model="timeRule.weekType" 
+            style="width: 100%"
+            :disabled="!hasSemester"
+          >
             <el-option label="全部" value="ALL" />
             <el-option label="单周" value="ODD" />
             <el-option label="双周" value="EVEN" />
@@ -71,6 +83,7 @@
       </el-col>
     </el-row>
 
+    <!-- 第三行：日内时段 -->
     <el-row :gutter="20">
       <el-col :span="24">
         <el-form-item label="日内时段范围">
@@ -90,11 +103,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { Calendar } from '@element-plus/icons-vue'
 import type { TimeRule, Semester } from '../../types/quartz'
 
-defineProps<{
+const props = defineProps<{
   timeRule: TimeRule
   semesters: Semester[]
 }>()
@@ -110,6 +123,36 @@ const weekdayOptions = [
   { label: '周六', value: 6 },
   { label: '周日', value: 7 },
 ]
+
+// 是否已选择学期（仅控制周次相关字段）
+const hasSemester = computed(() => {
+  return !!props.timeRule.semesterId && props.timeRule.semesterId > 0
+})
+
+// 学期切换处理
+function handleSemesterChange(semesterId: number | '') {
+  if (semesterId) {
+    // 选择学期后，设置周次默认值
+    props.timeRule.semesterId = semesterId
+    props.timeRule.startWeek = 1
+    props.timeRule.endWeek = 16
+    props.timeRule.weekType = 'Both'
+  } else {
+    // 清除学期时，仅重置周次相关字段
+    props.timeRule.semesterId = undefined
+    props.timeRule.startWeek = 1
+    props.timeRule.endWeek = 16
+    props.timeRule.weekType = 'Both'
+    // 注意：weekdays 和 timeRange 不受影响！
+  }
+}
+
+// 确保 weekdays 有默认值
+watch(() => props.timeRule.weekdays, (val) => {
+  if (!val || val.length === 0) {
+    props.timeRule.weekdays = [1, 2, 3, 4, 5]
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>

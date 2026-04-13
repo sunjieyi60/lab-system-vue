@@ -13,11 +13,14 @@
             :key="ds.id"
             :label="getDeviceName(ds.deviceId)"
             :value="ds.id"
+            style="padding: 2px 5px;"
           >
-            <span>{{ getDeviceName(ds.deviceId) }}</span>
-            <el-tag size="small" type="info" style="float: right">
-              {{ ds.deviceType }}
-            </el-tag>
+            <div class="datasource-option-content">
+              <span>{{ getDeviceName(ds.deviceId) }}</span>
+              <el-tag size="small" type="info">
+                {{ ds.deviceType }}
+              </el-tag>
+            </div>
           </el-option>
         </el-select>
       </el-col>
@@ -133,7 +136,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import type { DataSource, Device } from '../types/quartz'
-import { DeviceType } from '../types/quartz'
 import {
   getPropertiesByDeviceType,
   getPropertyByName,
@@ -141,7 +143,6 @@ import {
   buildSpELExpression,
   parseSpELExpression,
   type ConditionRule,
-  type PropertyDefinition,
 } from '../types/deviceProperties'
 
 const props = defineProps<{
@@ -281,6 +282,13 @@ watch(rule, () => {
 </script>
 
 <style scoped>
+
+.datasource-option-content {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+}
+
 .condition-editor {
   padding: 12px;
   background-color: var(--el-bg-color);

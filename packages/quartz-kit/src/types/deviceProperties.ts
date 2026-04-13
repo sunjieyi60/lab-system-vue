@@ -16,7 +16,7 @@ export interface PropertyDefinition {
   label: string                   // 显示名（中文）
   javaType: JavaType              // Java 数据类型
   description?: string            // 属性说明
-  enumValues?: { value: string | number; label: string }[]  // 枚举值（如果有）
+  enumValues?: { value: string | number | boolean; label: string }[]  // 枚举值（如果有）
   min?: number                    // 数值最小值
   max?: number                    // 数值最大值
   unit?: string                   // 单位

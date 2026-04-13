@@ -8,7 +8,7 @@
     </template>
     
     <el-row :gutter="20">
-      <el-col :span="12">
+      <el-col :span="8">
         <el-form-item label="任务名称" required>
           <el-input
             v-model="task.taskName"
@@ -18,31 +18,27 @@
           />
         </el-form-item>
       </el-col>
-      <el-col :span="12">
-        <el-form-item label="Cron表达式" required>
-          <el-input
-            v-model="task.cron"
-            placeholder="例如: 0 0 * * * ?"
+      <el-col :span="8">
+        <el-form-item label="所属实验室" required>
+          <el-select
+            v-model="task.laboratoryId"
+            placeholder="选择实验室"
+            style="width: 100%"
+            :disabled="readonly"
+            @change="handleLabChange"
           >
-            <template #append>
-              <el-dropdown @command="handleCronSelect">
-                <el-button type="primary">
-                  常用<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item 
-                      v-for="opt in cronOptions" 
-                      :key="opt.value" 
-                      :command="opt.value"
-                    >
-                      {{ opt.label }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </el-input>
+            <el-option
+              v-for="lab in laboratories"
+              :key="lab.id"
+              :label="lab.laboratoryName || lab.laboratoryId"
+              :value="lab.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="Cron表达式" required>
+          <CronPicker v-model="task.cron" />
         </el-form-item>
       </el-col>
     </el-row>
@@ -76,16 +72,26 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Timer, ArrowDown } from '@element-plus/icons-vue'
+import { Timer } from '@element-plus/icons-vue'
 import type { ScheduleTask } from '../../types/quartz'
+import CronPicker from '../CronPicker.vue'
+
+interface Laboratory {
+  id: number
+  laboratoryName?: string
+  laboratoryId?: string
+}
 
 const props = defineProps<{
   task: ScheduleTask
   modelValue: [string, string]
+  laboratories: Laboratory[]
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: [string, string]]
+  'labChange': [labId: number]
 }>()
 
 const dateRange = computed({
@@ -93,15 +99,8 @@ const dateRange = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const cronOptions = [
-  { label: '每小时', value: '0 0 * * * ?' },
-  { label: '每天', value: '0 0 0 * * ?' },
-  { label: '每周一', value: '0 0 0 * * 1' },
-  { label: '每月1号', value: '0 0 0 1 * ?' },
-]
-
-function handleCronSelect(cron: string) {
-  props.task.cron = cron
+function handleLabChange(labId: number) {
+  emit('labChange', labId)
 }
 </script>
 

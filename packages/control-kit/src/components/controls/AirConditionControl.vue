@@ -1,19 +1,15 @@
 <template>
   <div class="ac-control">
-    <!-- 设备锁定提示 -->
-    <div v-if="device.isLock && showLockWarning" class="lock-warning">
-      <span class="lock-icon">🔒</span>
-      <span>设备已锁定，无法操作</span>
-    </div>
-
     <!-- 快速开关 -->
     <div v-if="showQuickActions" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">快速开关</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        快速开关{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="quick-actions">
         <button 
           v-if="showPowerOn"
           class="btn btn-primary"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handlePowerOn"
         >
           <span v-if="loading && activeCommand === 'powerOn'" class="spinner"></span>
@@ -23,17 +19,17 @@
         <button 
           v-if="showPowerOff"
           class="btn btn-danger"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handlePowerOff"
         >
           <span v-if="loading && activeCommand === 'powerOff'" class="spinner"></span>
-          <span v-else>⭕</span>
+          <span v-else>&#9899;</span>
           {{ powerOffText }}
         </button>
         <button 
           v-if="showQueryStatus"
           class="btn btn-info"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleQueryStatus"
         >
           <span v-if="loading && activeCommand === 'queryStatus'" class="spinner"></span>
@@ -45,7 +41,9 @@
 
     <!-- 增强控制面板 -->
     <div v-if="showEnhancedControl" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ enhancedControlTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ enhancedControlTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="enhanced-control">
         <!-- 开关 -->
         <div v-if="showPowerSwitch" class="form-row">
@@ -61,7 +59,6 @@
                 v-model="enhancedForm.switch" 
                 type="radio" 
                 :value="Number(value)"
-                :disabled="device.isLock"
               >
               {{ label }}
             </label>
@@ -82,7 +79,6 @@
                 v-model="enhancedForm.mode" 
                 type="radio" 
                 :value="Number(value)"
-                :disabled="device.isLock"
               >
               {{ label }}
             </label>
@@ -103,7 +99,6 @@
               :max="tempMax"
               :step="tempStep"
               class="slider"
-              :disabled="device.isLock"
               @input="enhancedForm.temperature = Number(($event.target as HTMLInputElement).value)"
             >
             <div class="slider-marks">
@@ -128,7 +123,6 @@
                 v-model="enhancedForm.speed" 
                 type="radio" 
                 :value="Number(value)"
-                :disabled="device.isLock"
               >
               {{ label }}
             </label>
@@ -139,46 +133,65 @@
         <button 
           v-if="showApplyButton"
           class="btn btn-primary btn-full"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleEnhancedControl"
         >
           <span v-if="loading && activeCommand === 'enhanced'" class="spinner"></span>
-          {{ applyButtonText }}
+          {{ applyButtonText }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
         </button>
       </div>
     </div>
 
-    <!-- 设备信息 -->
-    <div v-if="showDeviceInfo" class="control-section">
+    <!-- 设备信息（单设备模式时显示） -->
+    <div v-if="showDeviceInfo && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ deviceInfoTitle }}</h4>
       <div class="device-info">
         <div v-if="showInfoId" class="info-item">
           <span class="info-label">设备ID:</span>
-          <span class="info-value">{{ device.id }}</span>
+          <span class="info-value">{{ deviceList[0]?.id }}</span>
         </div>
         <div v-if="showInfoName" class="info-item">
           <span class="info-label">设备名称:</span>
-          <span class="info-value">{{ device.deviceName }}</span>
+          <span class="info-value">{{ deviceList[0]?.deviceName }}</span>
         </div>
         <div v-if="showInfoAddress" class="info-item">
           <span class="info-label">地址:</span>
-          <span class="info-value">{{ device.address }}</span>
+          <span class="info-value">{{ deviceList[0]?.address }}</span>
         </div>
         <div v-if="showInfoSelfId" class="info-item">
           <span class="info-label">子ID:</span>
-          <span class="info-value">{{ device.selfId }}</span>
+          <span class="info-value">{{ deviceList[0]?.selfId }}</span>
         </div>
         <div v-if="showInfoGroupId" class="info-item">
           <span class="info-label">机组ID:</span>
-          <span class="info-value">{{ device.groupId }}</span>
+          <span class="info-value">{{ deviceList[0]?.groupId }}</span>
         </div>
         <div v-if="showInfoGateway" class="info-item">
           <span class="info-label">RS485网关:</span>
-          <span class="info-value">{{ device.rs485GatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.rs485GatewayId }}</span>
         </div>
-        <div v-if="showInfoSocketGateway && device.socketGatewayId" class="info-item">
+        <div v-if="showInfoSocketGateway && deviceList[0]?.socketGatewayId" class="info-item">
           <span class="info-label">Socket网关:</span>
-          <span class="info-value">{{ device.socketGatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.socketGatewayId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量设备信息汇总（批量模式时显示） -->
+    <div v-if="showDeviceInfo && isBatchMode" class="control-section">
+      <h4 v-if="showSectionTitles" class="section-title">设备信息汇总</h4>
+      <div class="device-info-summary">
+        <div class="info-item">
+          <span class="info-label">设备数量:</span>
+          <span class="info-value">{{ deviceCount }} 台</span>
+        </div>
+        <div v-if="showInfoAddress" class="info-item">
+          <span class="info-label">地址范围:</span>
+          <span class="info-value">{{ addressRange }}</span>
+        </div>
+        <div v-if="showInfoGateway" class="info-item">
+          <span class="info-label">RS485网关:</span>
+          <span class="info-value">{{ gatewayInfo }}</span>
         </div>
       </div>
     </div>
@@ -198,8 +211,8 @@ import {
 
 // ==================== Props 定义 ====================
 const props = withDefaults(defineProps<{
-  // 设备数据
-  device: AirCondition;
+  // 设备数据（支持单设备或设备数组）
+  device: AirCondition | AirCondition[];
   
   // 任务优先级
   priority?: Priority;
@@ -249,7 +262,7 @@ const props = withDefaults(defineProps<{
   priority: 'NORMAL',
   
   // 默认全部显示
-  showLockWarning: true,
+  showLockWarning: false,
   showQuickActions: true,
   showPowerOn: true,
   showPowerOff: true,
@@ -303,6 +316,24 @@ const enhancedForm = reactive<ACEnhancedForm>({
   speed: 0,
 });
 
+// ==================== 计算属性 ====================
+
+// 判断是否为批量模式
+const isBatchMode = computed(() => {
+  return Array.isArray(props.device);
+});
+
+// 获取设备列表
+const deviceList = computed((): AirCondition[] => {
+  if (Array.isArray(props.device)) {
+    return props.device;
+  }
+  return [props.device];
+});
+
+// 设备数量
+const deviceCount = computed(() => deviceList.value.length);
+
 // 计算温度范围
 const tempRange = computed(() => {
   const range: number[] = [];
@@ -312,70 +343,82 @@ const tempRange = computed(() => {
   return range;
 });
 
+// 计算地址范围
+const addressRange = computed(() => {
+  if (deviceList.value.length === 0) return '-';
+  const addresses = deviceList.value.map(d => d.address).filter(Boolean);
+  if (addresses.length === 0) return '-';
+  const min = Math.min(...addresses);
+  const max = Math.max(...addresses);
+  return min === max ? `${min}` : `${min}-${max}`;
+});
+
+// 网关信息
+const gatewayInfo = computed(() => {
+  const gateways = [...new Set(deviceList.value.map(d => d.rs485GatewayId).filter(Boolean))];
+  if (gateways.length === 0) return '-';
+  if (gateways.length === 1) return `${gateways[0]}`;
+  return `${gateways[0]} 等 ${gateways.length} 个`;
+});
+
+// ==================== 方法 ====================
+
 // 生成基础 Task 对象
-const createBaseTask = (): Omit<Task, 'commandLine' | 'args'> => ({
+const createBaseTask = (device: AirCondition): Omit<Task, 'commandLine' | 'args'> => ({
   priority: props.priority,
   deviceType: 'AirCondition',
-  deviceId: props.device.id,
+  deviceId: device.id,
 });
 
 // ========== 快速控制 ==========
 
-// 开机 - 返回单个 Task
+// 开机
 const handlePowerOn = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: AC_COMMANDS.OPEN,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'powerOn');
 };
 
-// 关机 - 返回单个 Task
+// 关机
 const handlePowerOff = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: AC_COMMANDS.CLOSE,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'powerOff');
 };
 
-// 查询状态 - 返回单个 Task
+// 查询状态
 const handleQueryStatus = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: AC_COMMANDS.REQUEST_DATA,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'queryStatus');
 };
 
-// 增强控制 - 返回单个 Task（组合控制）
+// 增强控制
 const handleEnhancedControl = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: AC_COMMANDS.ENHANCE_CONTROL,
     args: [
-      props.device.address,
-      props.device.selfId,
+      device.address,
+      device.selfId,
       enhancedForm.switch,
       enhancedForm.mode,
       enhancedForm.temperature,
       enhancedForm.speed,
     ],
-  }];
+  }));
   
   emitExecute(tasks, 'enhanced');
 };
@@ -395,12 +438,12 @@ const emitExecute = (tasks: Task[], commandKey: string) => {
 defineExpose({
   // 刷新状态
   refreshStatus: () => {
-    const tasks: Task[] = [{
-      ...createBaseTask(),
+    const tasks: Task[] = deviceList.value.map(device => ({
+      ...createBaseTask(device),
       commandLine: AC_COMMANDS.REQUEST_DATA,
-      args: [props.device.address, props.device.selfId],
-    }];
-    emit('execute', tasks);
+      args: [device.address, device.selfId],
+    }));
+    emitExecute(tasks, 'queryStatus');
   },
   // 获取当前表单数据
   getFormData: () => ({ ...enhancedForm }),
@@ -412,62 +455,50 @@ defineExpose({
   generateTasks: (command: 'powerOn' | 'powerOff' | 'queryStatus' | 'enhanced'): Task[] => {
     switch (command) {
       case 'powerOn':
-        return [{
-          ...createBaseTask(),
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
           commandLine: AC_COMMANDS.OPEN,
-          args: [props.device.address, props.device.selfId],
-        }];
+          args: [device.address, device.selfId],
+        }));
       case 'powerOff':
-        return [{
-          ...createBaseTask(),
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
           commandLine: AC_COMMANDS.CLOSE,
-          args: [props.device.address, props.device.selfId],
-        }];
+          args: [device.address, device.selfId],
+        }));
       case 'queryStatus':
-        return [{
-          ...createBaseTask(),
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
           commandLine: AC_COMMANDS.REQUEST_DATA,
-          args: [props.device.address, props.device.selfId],
-        }];
+          args: [device.address, device.selfId],
+        }));
       case 'enhanced':
-        return [{
-          ...createBaseTask(),
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
           commandLine: AC_COMMANDS.ENHANCE_CONTROL,
           args: [
-            props.device.address,
-            props.device.selfId,
+            device.address,
+            device.selfId,
             enhancedForm.switch,
             enhancedForm.mode,
             enhancedForm.temperature,
             enhancedForm.speed,
           ],
-        }];
+        }));
       default:
         return [];
     }
   },
+  // 获取设备列表
+  getDevices: () => deviceList.value,
+  // 判断是否为批量模式
+  isBatch: () => isBatchMode.value,
 });
 </script>
 
 <style scoped>
 .ac-control {
   padding: 16px;
-}
-
-.lock-warning {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #856404;
-}
-
-.lock-icon {
-  font-size: 18px;
 }
 
 .control-section {
@@ -485,8 +516,10 @@ defineExpose({
 
 .quick-actions {
   display: flex;
-  gap: 12px;
+  gap: 2rem;
   flex-wrap: wrap;
+  margin-bottom: 12px;
+  justify-content: center;
 }
 
 .btn {
@@ -494,10 +527,10 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 8px 2rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -659,6 +692,12 @@ defineExpose({
 }
 
 .device-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.device-info-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;

@@ -104,7 +104,7 @@
           </el-col>
           <el-col :span="6">
             <!-- 空调增强控制参数 -->
-            <template v-if="action.commandLine === CommandLine.ENHANCE_CONTROL_AIR_CONDITION">
+            <template v-if="action.commandLine === CommandLineValues.ENHANCE_CONTROL_AIR_CONDITION">
               <el-button
                 type="primary"
                 link
@@ -156,7 +156,7 @@ import type {
   ConditionGroup, 
   Device, 
   DeviceType, 
-  CommandLine 
+  CommandLine,
 } from '../../types/quartz'
 import { DeviceType as DeviceTypeEnum, CommandLine as CommandLineEnum } from '../../types/quartz'
 
@@ -175,12 +175,14 @@ const emit = defineEmits<{
   configArgs: [groupIndex: number, actionIndex: number, action: Action]
 }>()
 
-const CommandLine = CommandLineEnum
+const CommandLineValues = CommandLineEnum
 
 const deviceTypeOptions = [
   { label: '空调', value: DeviceTypeEnum.AirCondition },
   { label: '断路器', value: DeviceTypeEnum.CircuitBreak },
   { label: '照明', value: DeviceTypeEnum.Light },
+  { label: '门禁', value: DeviceTypeEnum.Access },
+  { label: '传感器', value: DeviceTypeEnum.Sensor },
 ]
 
 const commandOptions: Record<DeviceType, { label: string; value: CommandLine }[]> = {
@@ -188,17 +190,35 @@ const commandOptions: Record<DeviceType, { label: string; value: CommandLine }[]
     { label: '开启空调', value: CommandLineEnum.OPEN_AIR_CONDITION_RS485 },
     { label: '关闭空调', value: CommandLineEnum.CLOSE_AIR_CONDITION_RS485 },
     { label: '增强控制', value: CommandLineEnum.ENHANCE_CONTROL_AIR_CONDITION },
+    { label: '请求数据', value: CommandLineEnum.REQUEST_AIR_CONDITION_DATA_RS485 },
   ],
   [DeviceTypeEnum.CircuitBreak]: [
-    { label: '合闸', value: CommandLineEnum.OPEN_CIRCUIT_BREAK },
-    { label: '分闸', value: CommandLineEnum.CLOSE_CIRCUIT_BREAK },
+    { label: '合闸通电', value: CommandLineEnum.OPEN_CIRCUITBREAK },
+    { label: '分闸断电', value: CommandLineEnum.CLOSE_CIRCUITBREAK },
+    { label: '请求数据', value: CommandLineEnum.REQUEST_CIRCUITBREAK_DATA },
   ],
   [DeviceTypeEnum.Light]: [
     { label: '开灯', value: CommandLineEnum.OPEN_LIGHT },
     { label: '关灯', value: CommandLineEnum.CLOSE_LIGHT },
+    { label: '请求数据', value: CommandLineEnum.REQUEST_LIGHT_DATA },
   ],
-  [DeviceTypeEnum.Sensor]: [],
-  [DeviceTypeEnum.Access]: [],
+  [DeviceTypeEnum.Sensor]: [
+    { label: '请求数据', value: CommandLineEnum.REQUEST_SENSOR_DATA },
+  ],
+  [DeviceTypeEnum.Access]: [
+    { label: '单次开门', value: CommandLineEnum.OPEN_ACCESS_ONCE },
+    { label: '单次关门', value: CommandLineEnum.CLOSE_ACCESS_ONCE },
+    { label: '请求数据', value: CommandLineEnum.REQUEST_ACCESS_DATA },
+    { label: '长开锁定', value: CommandLineEnum.OPEN_ACCESS_PERSIST_LOCK },
+    { label: '长开解锁', value: CommandLineEnum.OPEN_ACCESS_PERSIST_UNLOCK },
+    { label: '长开保持', value: CommandLineEnum.OPEN_ACCESS_PERSIST_KEEP },
+    { label: '长关锁定', value: CommandLineEnum.CLOSE_ACCESS_PERSIST_LOCK },
+    { label: '长关解锁', value: CommandLineEnum.CLOSE_ACCESS_PERSIST_UNLOCK },
+    { label: '长关保持', value: CommandLineEnum.CLOSE_ACCESS_PERSIST_KEEP },
+    { label: '保持锁定', value: CommandLineEnum.KEEP_ACCESS_STATUS_LOCK },
+    { label: '保持解锁', value: CommandLineEnum.KEEP_ACCESS_STATUS_UNLOCK },
+    { label: '延时设定', value: CommandLineEnum.SET_ACCESS_DELAY },
+  ],
 }
 
 function onDeviceTypeChange(action: Action) {

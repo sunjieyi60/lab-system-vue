@@ -9,8 +9,11 @@
     >
       <!-- 任务主体 -->
       <TaskBasicCard
-        v-model:date-range="form.ranges.dateRange"
+        v-model="form.ranges.dateRange"
         :task="form.formData.task"
+        :laboratories="laboratories"
+        :readonly="isViewMode"
+        @lab-change="handleLabChange"
       />
 
       <!-- 时间规则 -->
@@ -25,8 +28,9 @@
         :data-group="form.formData.dataGroup"
         :devices="devices"
         :readonly="isViewMode"
+        :laboratory-id="form.formData.task.laboratoryId"
         @add="handleAddDataSource"
-        @remove="form.removeDataSource"
+        @remove="handleRemoveDataSource"
         @update-device="handleUpdateDataSourceDevice"
       />
 
@@ -94,7 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+// FormInstance type not currently used
 
 import { useQuartzForm } from '../composables/useQuartzForm'
 import TaskBasicCard from './cards/TaskBasicCard.vue'
@@ -120,6 +124,12 @@ import { CommandLine } from '../types/quartz'
 // ============================================
 // Props & Emits
 // ============================================
+interface Laboratory {
+  id: number
+  laboratoryName?: string
+  laboratoryId?: string
+}
+
 const props = withDefaults(defineProps<{
   initialValue?: ScheduleConfigRoot
   mode?: FormMode
@@ -127,6 +137,7 @@ const props = withDefaults(defineProps<{
   devices: Device[]
   users: User[]
   semesters: Semester[]
+  laboratories: Laboratory[]
   loading?: boolean
 }>(), {
   mode: 'create',
@@ -137,6 +148,7 @@ const emit = defineEmits<{
   submit: [data: { isCreate: boolean; data: ScheduleConfigRoot }]
   cancel: []
   change: [data: ScheduleConfigRoot]
+  'lab-change': [labId: number]
 }>()
 
 // ============================================
@@ -194,6 +206,27 @@ function handleAddDataSource() {
   form.addDataSource()
 }
 
+function handleRemoveDataSource(index: number, dataSourceId: string) {
+  // 先删除数据源
+  form.removeDataSource(index)
+  
+  // 清理条件组中引用该数据源的条件
+  const conditionGroups = form.formData.conditionGroups
+  for (let gi = conditionGroups.length - 1; gi >= 0; gi--) {
+    const group = conditionGroups[gi]
+    // 从后往前遍历条件，避免删除时索引变化
+    for (let ci = group.conditions.length - 1; ci >= 0; ci--) {
+      const condition = group.conditions[ci]
+      // 检查条件表达式是否引用了被删除的数据源ID
+      if (condition.expr.includes(`#{${dataSourceId}}`)) {
+        form.removeCondition(gi, ci)
+      }
+    }
+  }
+  
+  ElMessage.info('已清理关联的条件设置')
+}
+
 function handleUpdateDataSourceDevice(index: number, deviceId: number) {
   const device = props.devices.find(d => d.id === deviceId)
   if (device) {
@@ -239,6 +272,24 @@ function handleArgsConfirm(args: number[]) {
     form.updateActionArgs(groupIndex, actionIndex, args)
     ElMessage.success('参数已保存')
   }
+}
+
+// ============================================
+// 实验室切换处理
+// ============================================
+function handleLabChange(labId: number) {
+  // 切换实验室时清空数据源和动作组中的设备选择
+  // 因为不同实验室的设备不同
+  form.formData.dataGroup = []
+  form.formData.actionGroups.forEach(ag => {
+    ag.actions.forEach(a => {
+      a.deviceId = 0
+      a.deviceType = 'AirCondition'
+    })
+  })
+  ElMessage.warning('实验室已切换，请重新选择设备')
+  // 通知父组件实验室已切换
+  emit('lab-change', labId)
 }
 
 // ============================================

@@ -38,7 +38,7 @@
           :icon="Delete"
           size="small"
           circle
-          @click="emit('remove', index)"
+          @click="emit('remove', index, dataSource.id)"
         />
       </div>
       <el-row :gutter="20">
@@ -51,13 +51,20 @@
               @update:model-value="(val: number) => emit('updateDevice', index, val)"
             >
               <el-option
-                v-for="device in availableDevices"
+                v-for="device in deviceOptions"
                 :key="device.id"
                 :label="device.name"
                 :value="device.id"
+                :disabled="device.used"
               >
-                <span style="float: left">{{ device.name }}</span>
-                <el-tag size="small" style="float: right">{{ device.type }}</el-tag>
+                <div class="option">
+                  <span>{{ device.name }}</span>
+                  <div>
+                    <el-tag size="small">{{ device.type }}</el-tag>
+                    <el-tag v-if="device.used" type="info" size="small" style="margin-left: 2px;">已使用</el-tag>
+                  </div>
+                </div>
+                
               </el-option>
             </el-select>
           </el-form-item>
@@ -70,7 +77,6 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-divider v-if="index < dataGroup.length - 1" />
     </div>
   </el-card>
 </template>
@@ -84,17 +90,34 @@ const props = defineProps<{
   dataGroup: DataSource[]
   devices: Device[]
   readonly?: boolean
+  laboratoryId?: number
 }>()
 
 const emit = defineEmits<{
   add: []
-  remove: [index: number]
+  remove: [index: number, dataSourceId: string]
   updateDevice: [index: number, deviceId: number]
 }>()
 
-const availableDevices = computed(() => {
-  const usedDeviceIds = new Set(props.dataGroup.map(d => d.deviceId).filter(id => id > 0))
-  return props.devices.filter(d => !usedDeviceIds.has(d.id))
+// 获取已使用的设备ID集合
+const usedDeviceIds = computed(() => {
+  return new Set(props.dataGroup.map(d => d.deviceId).filter(id => id > 0))
+})
+
+// 设备选项列表（包含禁用状态）
+const deviceOptions = computed(() => {
+  let filtered = props.devices
+  
+  // 如果指定了实验室，只显示该实验室的设备
+  if (props.laboratoryId) {
+    filtered = filtered.filter(d => (d as any).labId === props.laboratoryId)
+  }
+  
+  // 标记已使用的设备
+  return filtered.map(device => ({
+    ...device,
+    used: usedDeviceIds.value.has(device.id)
+  }))
 })
 
 const tagMap: Record<DeviceType, string> = {
@@ -122,6 +145,12 @@ function getDeviceTypeTag(type?: DeviceType) {
 .card-header .el-icon {
   font-size: 18px;
   color: var(--el-color-primary);
+}
+
+.option {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
 }
 
 .data-source-item {

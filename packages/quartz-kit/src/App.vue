@@ -68,6 +68,7 @@
         :devices="mockDevices"
         :users="mockUsers"
         :semesters="mockSemesters"
+        :laboratories="mockLaboratories"
         :loading="submitting"
         @submit="handleSubmit"
         @cancel="handleCancel"
@@ -234,7 +235,7 @@ import type {
   Semester,
   FormMode,
 } from './types/quartz'
-import { DeviceType, CommandLine, ConditionGroupType, AlarmType, WeekType } from './types/quartz'
+import { DeviceType, CommandLine, ConditionGroupType, AlarmType } from './types/quartz'
 import { generateSnowflakeId } from './utils/snowflake'
 
 // ============================================
@@ -262,6 +263,13 @@ const mockSemesters: Semester[] = [
   { id: 1, name: '2024-2025学年第一学期' },
   { id: 2, name: '2024-2025学年第二学期' },
   { id: 3, name: '2025-2026学年第一学期' },
+]
+
+// 模拟实验室列表
+const mockLaboratories = [
+  { id: 1, laboratoryName: '实验室101', laboratoryId: '101' },
+  { id: 2, laboratoryName: '实验室102', laboratoryId: '102' },
+  { id: 3, laboratoryName: '实验室103', laboratoryId: '103' },
 ]
 
 function createMockTask(index: number): ScheduleConfigRoot {
@@ -292,7 +300,7 @@ function createMockTask(index: number): ScheduleConfigRoot {
       weekdays: [1, 2, 3, 4, 5],
       startWeek: 1,
       endWeek: 16,
-      weekType: WeekType.ALL,
+      weekType: 'Both',
       startTime: '08:00:00',
       endTime: '18:00:00',
     },
@@ -385,7 +393,7 @@ const currentPayload = ref<ScheduleConfigRoot | null>(null)
 const currentPayloadExpanded = ref(true)
 const previewTab = ref('json')
 const serverResponse = ref<{ success: boolean; message: string; data?: any } | null>(null)
-const formRef = ref<InstanceType<typeof QuartzTaskForm> | null>(null)
+// formRef is defined on the component instance via template ref
 
 // ============================================
 // 计算属性

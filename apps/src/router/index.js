@@ -65,10 +65,10 @@ const routes = [
         meta: { title: "中央空调" },
       },
       {
-        path: "gateway",
-        name: "Gateway",
-        component: () => import("@/views/control/gateway/index.vue"),
-        meta: { title: "网关管理" },
+        path: "device",
+        name: "Device",
+        component: () => import("@/views/control/device_manage/index.vue"),
+        meta: { title: "设备管理" },
       },
       {
         path: "access",

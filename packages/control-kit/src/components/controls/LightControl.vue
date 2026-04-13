@@ -1,21 +1,14 @@
 <template>
   <div class="light-control">
-    <!-- 设备锁定提示 -->
-    <div v-if="device.isLock && showLockWarning" class="lock-warning">
-      <span class="lock-icon">🔒</span>
-      <span>设备已锁定，无法操作</span>
-    </div>
-
-    <!-- 主开关 -->
-    <div v-if="showMainSwitch" class="control-section">
+    <!-- 主开关（仅单设备模式显示） -->
+    <div v-if="showMainSwitch && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ mainSwitchTitle }}</h4>
       <div class="main-control">
         <div 
           class="light-switch"
           :class="{ 
             on: lightState, 
-            off: !lightState,
-            locked: device.isLock 
+            off: !lightState
           }"
           @click="handleToggle"
         >
@@ -36,12 +29,14 @@
 
     <!-- 快捷操作 -->
     <div v-if="showQuickActions" class="control-section">
-      <h4 v-if="showSectionTitles" class="section-title">{{ quickActionsTitle }}</h4>
+      <h4 v-if="showSectionTitles" class="section-title">
+        {{ quickActionsTitle }}{{ isBatchMode ? `（${deviceCount}台设备）` : '' }}
+      </h4>
       <div class="quick-actions">
         <button 
           v-if="showOpenButton"
           class="btn btn-success"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleOpen"
         >
           <span v-if="loading && activeCommand === 'open'" class="spinner"></span>
@@ -51,7 +46,7 @@
         <button 
           v-if="showCloseButton"
           class="btn btn-danger"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleClose"
         >
           <span v-if="loading && activeCommand === 'close'" class="spinner"></span>
@@ -61,7 +56,7 @@
         <button 
           v-if="showQueryStatus"
           class="btn btn-info"
-          :disabled="loading || device.isLock"
+          :disabled="loading"
           @click="handleQueryStatus"
         >
           <span v-if="loading && activeCommand === 'queryStatus'" class="spinner"></span>
@@ -71,29 +66,48 @@
       </div>
     </div>
 
-    <!-- 设备信息 -->
-    <div v-if="showDeviceInfo" class="control-section">
+    <!-- 设备信息（单设备模式时显示） -->
+    <div v-if="showDeviceInfo && !isBatchMode" class="control-section">
       <h4 v-if="showSectionTitles" class="section-title">{{ deviceInfoTitle }}</h4>
       <div class="device-info">
         <div v-if="showInfoId" class="info-item">
           <span class="info-label">设备ID:</span>
-          <span class="info-value">{{ device.id }}</span>
+          <span class="info-value">{{ deviceList[0]?.id }}</span>
         </div>
         <div v-if="showInfoName" class="info-item">
           <span class="info-label">设备名称:</span>
-          <span class="info-value">{{ device.deviceName }}</span>
+          <span class="info-value">{{ deviceList[0]?.deviceName }}</span>
         </div>
         <div v-if="showInfoAddress" class="info-item">
           <span class="info-label">地址:</span>
-          <span class="info-value">{{ device.address }}</span>
+          <span class="info-value">{{ deviceList[0]?.address }}</span>
         </div>
         <div v-if="showInfoSelfId" class="info-item">
           <span class="info-label">子ID:</span>
-          <span class="info-value">{{ device.selfId }}</span>
+          <span class="info-value">{{ deviceList[0]?.selfId }}</span>
         </div>
         <div v-if="showInfoGateway" class="info-item">
           <span class="info-label">RS485网关:</span>
-          <span class="info-value">{{ device.rs485GatewayId }}</span>
+          <span class="info-value">{{ deviceList[0]?.rs485GatewayId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量设备信息汇总（批量模式时显示） -->
+    <div v-if="showDeviceInfo && isBatchMode" class="control-section">
+      <h4 v-if="showSectionTitles" class="section-title">设备信息汇总</h4>
+      <div class="device-info-summary">
+        <div class="info-item">
+          <span class="info-label">设备数量:</span>
+          <span class="info-value">{{ deviceCount }} 台</span>
+        </div>
+        <div v-if="showInfoAddress" class="info-item">
+          <span class="info-label">地址范围:</span>
+          <span class="info-value">{{ addressRange }}</span>
+        </div>
+        <div v-if="showInfoGateway" class="info-item">
+          <span class="info-label">RS485网关:</span>
+          <span class="info-value">{{ gatewayInfo }}</span>
         </div>
       </div>
     </div>
@@ -101,14 +115,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed } from 'vue';
 import type { Light, Task, Priority } from '../../types/device';
 import { LIGHT_COMMANDS } from '../../types/device';
 
 // ==================== Props 定义 ====================
 const props = withDefaults(defineProps<{
-  // 设备数据
-  device: Light;
+  // 设备数据（支持单设备或设备数组）
+  device: Light | Light[];
   
   // 任务优先级
   priority?: Priority;
@@ -155,7 +169,7 @@ const props = withDefaults(defineProps<{
   priority: 'NORMAL',
   
   // 默认显示
-  showLockWarning: true,
+  showLockWarning: false,
   showMainSwitch: true,
   showQuickActions: true,
   showOpenButton: true,
@@ -198,53 +212,82 @@ const loading = ref(false);
 const activeCommand = ref<string>('');
 const lightState = ref(false);
 
-// 监听设备变化
-watch(() => props.device, (newDevice) => {
-  console.log('设备更新:', newDevice.deviceName);
-}, { immediate: true });
+// ==================== 计算属性 ====================
+
+// 判断是否为批量模式
+const isBatchMode = computed(() => {
+  return Array.isArray(props.device);
+});
+
+// 获取设备列表
+const deviceList = computed((): Light[] => {
+  if (Array.isArray(props.device)) {
+    return props.device;
+  }
+  return [props.device];
+});
+
+// 设备数量
+const deviceCount = computed(() => deviceList.value.length);
+
+// 计算地址范围
+const addressRange = computed(() => {
+  if (deviceList.value.length === 0) return '-';
+  const addresses = deviceList.value.map(d => d.address).filter(Boolean);
+  if (addresses.length === 0) return '-';
+  const min = Math.min(...addresses);
+  const max = Math.max(...addresses);
+  return min === max ? `${min}` : `${min}-${max}`;
+});
+
+// 网关信息
+const gatewayInfo = computed(() => {
+  const gateways = [...new Set(deviceList.value.map(d => d.rs485GatewayId).filter(Boolean))];
+  if (gateways.length === 0) return '-';
+  if (gateways.length === 1) return `${gateways[0]}`;
+  return `${gateways[0]} 等 ${gateways.length} 个`;
+});
+
+// ==================== 方法 ====================
 
 // 生成基础 Task 对象
-const createBaseTask = (): Omit<Task, 'commandLine' | 'args'> => ({
+const createBaseTask = (device: Light): Omit<Task, 'commandLine' | 'args'> => ({
   priority: props.priority,
   deviceType: 'Light',
-  deviceId: props.device.id,
+  deviceId: device.id,
 });
 
 // ========== 控制处理 ==========
 
-// 开灯 - 返回单个 Task
+// 开灯
 const handleOpen = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: LIGHT_COMMANDS.OPEN,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'open', (success) => {
-    if (success) lightState.value = true;
+    if (success && !isBatchMode.value) lightState.value = true;
   });
 };
 
-// 关灯 - 返回单个 Task
+// 关灯
 const handleClose = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: LIGHT_COMMANDS.CLOSE,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'close', (success) => {
-    if (success) lightState.value = false;
+    if (success && !isBatchMode.value) lightState.value = false;
   });
 };
 
-// 切换开关
+// 切换开关（仅单设备模式）
 const handleToggle = () => {
-  if (props.device.isLock || loading.value) return;
+  if (isBatchMode.value || loading.value) return;
   
   if (lightState.value) {
     handleClose();
@@ -253,15 +296,13 @@ const handleToggle = () => {
   }
 };
 
-// 查询状态 - 返回单个 Task
+// 查询状态
 const handleQueryStatus = () => {
-  if (props.device.isLock) return;
-  
-  const tasks: Task[] = [{
-    ...createBaseTask(),
+  const tasks: Task[] = deviceList.value.map(device => ({
+    ...createBaseTask(device),
     commandLine: LIGHT_COMMANDS.REQUEST_DATA,
-    args: [props.device.address, props.device.selfId],
-  }];
+    args: [device.address, device.selfId],
+  }));
   
   emitExecute(tasks, 'queryStatus');
 };
@@ -282,11 +323,11 @@ const emitExecute = (tasks: Task[], commandKey: string, callback?: (success: boo
 defineExpose({
   // 刷新状态
   refreshStatus: () => {
-    const tasks: Task[] = [{
-      ...createBaseTask(),
+    const tasks: Task[] = deviceList.value.map(device => ({
+      ...createBaseTask(device),
       commandLine: LIGHT_COMMANDS.REQUEST_DATA,
-      args: [props.device.address, props.device.selfId],
-    }];
+      args: [device.address, device.selfId],
+    }));
     emit('execute', tasks);
   },
   // 获取/设置灯光状态
@@ -296,40 +337,39 @@ defineExpose({
   },
   // 生成控制 Task
   generateTasks: (command: 'open' | 'close' | 'queryStatus'): Task[] => {
-    const base = createBaseTask();
     switch (command) {
       case 'open':
-        return [{ ...base, commandLine: LIGHT_COMMANDS.OPEN, args: [props.device.address, props.device.selfId] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: LIGHT_COMMANDS.OPEN,
+          args: [device.address, device.selfId],
+        }));
       case 'close':
-        return [{ ...base, commandLine: LIGHT_COMMANDS.CLOSE, args: [props.device.address, props.device.selfId] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: LIGHT_COMMANDS.CLOSE,
+          args: [device.address, device.selfId],
+        }));
       case 'queryStatus':
-        return [{ ...base, commandLine: LIGHT_COMMANDS.REQUEST_DATA, args: [props.device.address, props.device.selfId] }];
+        return deviceList.value.map(device => ({
+          ...createBaseTask(device),
+          commandLine: LIGHT_COMMANDS.REQUEST_DATA,
+          args: [device.address, device.selfId],
+        }));
       default:
         return [];
     }
   },
+  // 获取设备列表
+  getDevices: () => deviceList.value,
+  // 判断是否为批量模式
+  isBatch: () => isBatchMode.value,
 });
 </script>
 
 <style scoped>
 .light-control {
   padding: 16px;
-}
-
-.lock-warning {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #856404;
-}
-
-.lock-icon {
-  font-size: 18px;
 }
 
 .control-section {
@@ -374,11 +414,6 @@ defineExpose({
 .light-switch.off {
   background: linear-gradient(135deg, #f5f5f5 0%, #d9d9d9 100%);
   border: 4px solid #bfbfbf;
-}
-
-.light-switch.locked {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .light-icon {
@@ -432,7 +467,7 @@ defineExpose({
 
 .quick-actions {
   display: flex;
-  gap: 12px;
+  gap: 3rem;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -498,6 +533,12 @@ defineExpose({
 }
 
 .device-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.device-info-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;

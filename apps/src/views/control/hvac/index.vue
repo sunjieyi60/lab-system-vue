@@ -1,150 +1,103 @@
 <template>
-  <div class="door-control-page">
+  <div class="ac-control-page">
     <div class="main-content">
-      <!-- 第二行部分 -->
-      <div class="filter-row second-row">
-        <div class="button-group left-buttons">
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleRefresh"
-            >手动刷新</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleRemoteControl"
-            >远程控制</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleLockSetting"
-            >锁定设置</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            style="margin-right: 10px"
-            @click="handleStartPolling"
-            >开启轮询</el-button
-          >
+      <!-- 顶部工具栏 -->
+      <div class="toolbar-row">
+        <div class="left-actions">
+          <el-button :loading="isLoading" @click="handleRefresh">手动刷新</el-button>
+          <el-button :loading="isLoading" @click="handleRemoteControl">远程控制</el-button>
+          <el-button :loading="isLoading" @click="handleLockSetting">锁定设置</el-button>
         </div>
 
-        <div class="button-group right-buttons">
+        <div class="right-actions">
           <el-input
             v-model="searchKey"
             placeholder="请输入关键字"
-            style="width: 180px; flex-shrink: 1"
+            class="search-input"
+            @keyup.enter="handleSearch"
           >
             <template #suffix>
-              <img src="/images/搜索.png" style="width: 16px; height: 16px" />
+              <img
+                src="/images/搜索.png"
+                style="width: 16px; height: 16px; cursor: pointer"
+                @click="handleSearch"
+              />
             </template>
           </el-input>
-          <span class="device-stat">
-            {{ onlineDeviceCount }}台内机在线，总共{{ totalDeviceCount }}台
-          </span>
+          <div class="statistics">
+            <span class="stat-item">
+              <span class="stat-dot black"></span>
+              共 {{ tableData.length }} 台
+            </span>
+            <span class="stat-item">
+              <span class="stat-dot green"></span>
+              开 {{ openCount }} 台
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- 表格盒子 -->
+      <!-- 表格 -->
       <div class="table-box">
         <el-table
           ref="tableRef"
-          :data="paginatedTableData"
+          :data="tableData"
           stripe
           style="width: 100%"
           :header-cell-style="{
-            background: '#226EE04D',
-            color: '#333',
+            background: '#f5f7fa',
+            color: '#606266',
+            fontWeight: '500',
             height: '48px',
           }"
-          :row-style="{ height: '56px' }"
+          :row-style="{ height: '48px' }"
+          @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column
-            prop="deptName"
-            label="单位"
-            width="120px"
-            align="center"
-            sortable
-          >
+          <el-table-column prop="deptName" label="单位" align="center" min-width="140">
             <template #default="{ row }">
-              <el-tooltip
-                v-if="getDeptName(row.labId).length > 5"
-                :content="getDeptName(row.labId)"
-                placement="top"
-                effect="dark"
-              >
-                <span>{{ getDeptName(row.labId).slice(0, 5) }}...</span>
-              </el-tooltip>
-              <span v-else>{{ getDeptName(row.labId) }}</span>
+              {{ getDeptName(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="buildingName"
-            label="楼栋"
-            width="100px"
-            align="center"
-            sortable
-          >
+          <el-table-column prop="buildingName" label="楼栋" align="center" min-width="100">
             <template #default="{ row }">
               {{ getBuildingName(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="labName"
-            label="实验室编号"
-            width="130px"
-            align="center"
-            sortable
-          >
+          <el-table-column prop="labNo" label="实验室编号" align="center" min-width="120">
             <template #default="{ row }">
-              {{ getLabName(row.labId) }}
+              {{ getLabNo(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="airCond"
-            label="空调内机"
-            align="center"
-            sortable
-          />
-          <el-table-column prop="switch" label="开关" align="center" sortable>
+          <el-table-column prop="airCond" label="空调内机" align="center" min-width="120" />
+          <el-table-column prop="switch" label="开关" align="center" min-width="80">
             <template #default="{ row }">
               <el-tag
-                :type="row.switch === '开' ? 'success' : 'info'"
-                size="small"
+                :type="row.isOpen ? 'success' : 'danger'"
+                size="large"
               >
-                {{ row.switch }}
+                {{ row.isOpen ? '开' : '关' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="mode" label="模式" align="center" sortable />
-          <el-table-column prop="temp" label="温度" align="center" sortable />
-          <el-table-column
-            prop="windSpeed"
-            label="风速"
-            align="center"
-            sortable
-          />
-          <el-table-column
-            prop="roomTemp"
-            label="室温"
-            align="center"
-            sortable
-          />
-          <el-table-column prop="fault" label="故障" align="center" sortable>
+          <el-table-column prop="mode" label="模式" align="center" min-width="80" />
+          <el-table-column prop="temp" label="温度" align="center" min-width="80" />
+          <el-table-column prop="windSpeed" label="风速" align="center" min-width="80" />
+          <el-table-column prop="roomTemp" label="室温" align="center" min-width="80" />
+          <el-table-column prop="fault" label="故障" align="center" min-width="80">
             <template #default="{ row }">
-              <span
-                :style="{ color: row.fault !== '无' ? '#f56c6c' : '#67c23a' }"
-              >
+              <span :style="{ color: row.fault !== '无' ? '#f56c6c' : '#67c23a' }">
                 {{ row.fault }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="unit" label="机组" align="center" sortable />
-          <el-table-column prop="online" label="在线" align="center" sortable>
+          <el-table-column prop="unit" label="机组" align="center" min-width="80" />
+          <el-table-column prop="online" label="在线" align="center" min-width="80">
             <template #default="{ row }">
-              <el-tag :type="row.online ? 'success' : 'info'" size="small">
+              <el-tag
+                :type="row.online ? 'success' : 'danger'"
+                size="large"
+              >
                 {{ row.online ? "在线" : "离线" }}
               </el-tag>
             </template>
@@ -154,12 +107,13 @@
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
+        <span class="total-text">共{{ tableData.length }}条</span>
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
           :total="total"
+          layout="sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
@@ -167,138 +121,151 @@
     </div>
   </div>
 
-  <!-- 弹窗组件 -->
-  <AddNode
-    v-model="showAddNode"
-    device-type="AirCondition"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
-  <RemoteControl
+  <!-- 远程控制弹窗 - 使用 AirConditionControl 组件 -->
+  <el-dialog
     v-model="showRemote"
-    :selected-rows="currentSelectedRows"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-    @closed="currentSelectedRows = []"
-  />
-  <LockSetting
-    v-model="showLock"
-    :selected-rows="currentSelectedRows"
-    @success="handleRefresh"
-    @closed="currentSelectedRows = []"
-  />
-  <IntelligentControl
-    v-model="showIntelligent"
-    :selected-rows="currentSelectedRows"
-    @closed="currentSelectedRows = []"
-  />
+    :title="currentSelectedRows.length > 1 ? `批量控制 (${currentSelectedRows.length}台设备)` : '空调远程控制'"
+    width="560px"
+    :close-on-click-modal="false"
+    destroy-on-close
+    @closed="onRemoteDialogClosed"
+  >
+    <div v-if="currentSelectedRows.length === 0" class="dialog-empty">
+      未选择设备
+    </div>
+    
+    <!-- 批量控制模式 -->
+    <div v-else-if="currentSelectedRows.length > 1" class="dialog-content">
+      <!-- 控制模式切换 -->
+      <div class="control-mode-switch">
+        <el-radio-group v-model="controlMode" size="large">
+          <el-radio-button label="simple">简单控制</el-radio-button>
+          <el-radio-button label="enhanced">增强控制</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <!-- 批量控制 -->
+      <AirConditionControl
+        :device="selectedAirConditionDevices"
+        v-bind="controlMode === 'simple' ? simpleControlConfig : enhancedControlConfig"
+        @execute="handleBatchControlExecute"
+      />
+
+      <!-- 批量控制设备列表预览 -->
+      <div class="batch-device-list">
+        <div class="batch-device-list-title">
+          <span>待控制设备列表 ({{ currentSelectedRows.length }})</span>
+          <el-button type="primary" link size="small" @click="toggleDeviceList">
+            {{ showDeviceList ? '收起' : '展开' }}
+          </el-button>
+        </div>
+        <el-collapse-transition>
+          <div v-show="showDeviceList" class="batch-device-list-content">
+            <el-tag 
+              v-for="(row, index) in currentSelectedRows" 
+              :key="row.id"
+              size="small"
+              class="device-tag"
+            >
+              {{ index + 1 }}. {{ row.airCond }} - {{ getLabName(row.labId) }}
+            </el-tag>
+          </div>
+        </el-collapse-transition>
+      </div>
+    </div>
+
+    <!-- 单设备控制模式 -->
+    <div v-else class="dialog-content">
+      <!-- 控制模式切换 -->
+      <div class="control-mode-switch">
+        <el-radio-group v-model="controlMode" size="large">
+          <el-radio-button label="simple">简单控制</el-radio-button>
+          <el-radio-button label="enhanced">增强控制</el-radio-button>
+        </el-radio-group>
+      </div>
+      
+      <!-- 设备信息 -->
+      <div class="selected-device-info">
+        <span class="device-label">当前设备：</span>
+        <span class="device-value">{{ currentSelectedRows[0].airCond }}</span>
+        <span class="device-location">{{ getLabName(currentSelectedRows[0].labId) }}</span>
+      </div>
+
+      <!-- 单设备控制 -->
+      <AirConditionControl
+        :device="selectedAirConditionDevice"
+        v-bind="controlMode === 'simple' ? simpleControlConfig : enhancedControlConfig"
+        @execute="handleControlExecute"
+      />
+    </div>
+  </el-dialog>
+  
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
-import { ArrowDown } from "@element-plus/icons-vue";
-import { deleteDevice, startDevicePolling } from "@/api/device";
-import AddNode from "@/views/control/components/AddNodeHvac.vue";
-import RemoteControl from "@/views/control/components/RemoteControl.vue";
-import LockSetting from "@/views/control/components/LockSetting.vue";
-import IntelligentControl from "@/views/control/components/IntelligentControl.vue";
-import { useUserStore } from "@/stores";
-import { useDeviceStore, DeviceType, DeviceTypeName } from "@/stores";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { useLabFilter } from "@/composables/useLabFilter.js";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useDeviceStore, DeviceType } from "@/stores/modules/device.js";
+import { ElMessage } from "element-plus";
+import { controlDevice } from "@/api/device.js";
+
+// 引入 control-kit 组件
+import AirConditionControl from "@packages/control-kit/src/components/controls/AirConditionControl.vue";
 
 const userStore = useUserStore();
 const deviceStore = useDeviceStore();
 
-// 使用平行筛选逻辑
-const {
-  selectedDept,
-  selectedBuilding,
-  selectedLab,
-  availableDepts,
-  availableBuildings,
-  availableLabs,
-  currentFilteredLabs,
-  handleDeptChange,
-  handleBuildingChange,
-  handleLabChange,
-} = useLabFilter();
 const searchKey = ref("");
 const tableRef = ref();
 const isLoading = ref(false);
-const showAddNode = ref(false);
-const showLock = ref(false);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
 const showRemote = ref(false);
-const showIntelligent = ref(false);
+
+// 远程控制模式
+const controlMode = ref('simple'); // 'simple' | 'enhanced'
+
+// 批量控制设备列表展开状态
+const showDeviceList = ref(false);
 
 // 保存选中的行数据（用于传给弹窗）
 const currentSelectedRows = ref([]);
 
-// 计算属性：表格数据（根据选择的实验室筛选）
+// 统计：开着的空调数量
+const openCount = computed(() => {
+  return tableData.value.filter(item => item.isOpen).length;
+});
+
+// 计算属性：表格数据（使用字符串拼接搜索）
 const tableData = computed(() => {
-  // 先获取所有空调数据
   let data = deviceStore.getAirConditionTableData;
 
-  // 获取当前筛选后的实验室ID列表
-  const filteredLabIds = currentFilteredLabs.value.map((lab) => String(lab.id));
-
-  // 如果有任何筛选条件，按实验室ID过滤
-  if (selectedDept.value || selectedBuilding.value || selectedLab.value) {
-    data = data.filter((item) => filteredLabIds.includes(String(item.labId)));
-  }
-
-  // 如果有搜索关键字，再按关键字筛选
+  // 如果有搜索关键字，按关键字筛选
   if (searchKey.value.trim()) {
     const k = searchKey.value.trim().toLowerCase();
     data = data.filter((item) => {
-      // 搜索所有原始字段
-      const originalMatch = Object.values(item).some((val) =>
-        String(val).toLowerCase().includes(k),
-      );
-      if (originalMatch) return true;
-
-      // 搜索动态计算的字段（单位、楼栋、实验室名称）
-      const deptName = getDeptName(item.labId);
-      const buildingName = getBuildingName(item.labId);
-      const labName = getLabName(item.labId);
-
-      return (
-        deptName.toLowerCase().includes(k) ||
-        buildingName.toLowerCase().includes(k) ||
-        labName.toLowerCase().includes(k)
-      );
+      // 将关键属性拼接为字符串，使用 "-" 作为分隔符
+      const searchStr = [
+        getDeptName(item.labId),
+        getBuildingName(item.labId),
+        getLabNo(item.labId),
+        item.airCond,
+        item.switch,
+        item.mode,
+        item.temp,
+        item.windSpeed,
+        item.roomTemp,
+        item.fault,
+        item.unit,
+        item.online ? '在线' : '离线'
+      ].join('-').toLowerCase();
+      return searchStr.includes(k);
     });
   }
 
   return data;
 });
-
-// 分页相关
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = computed(() => tableData.value.length);
-
-// 设备统计
-const totalDeviceCount = computed(() => tableData.value.length);
-const onlineDeviceCount = computed(
-  () => tableData.value.filter((item) => item.online).length,
-);
-
-// 分页后的数据
-const paginatedTableData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return tableData.value.slice(start, end);
-});
-
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1;
-};
-
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-};
 
 // 获取选中的完整行数据（传给远程控制弹窗）
 const selectedRows = computed(() => {
@@ -319,43 +286,223 @@ const selectedRows = computed(() => {
   });
   return fullSelectedRows;
 });
+
 // 获取实验室名称
 const getLabName = (labId) => {
   const lab = laboratoryList.value.find((item) => item.id === labId);
-  return lab?.laboratoryId || lab?.laboratoryName || labId || "-";
+  return lab?.laboratoryName || lab?.laboratoryId || labId || "-";
 };
 
 // 获取单位名称
 const getDeptName = (labId) => {
   const lab = laboratoryList.value.find((item) => item.id === labId);
   if (!lab) return "-";
-  const deptIds = lab.belongToDepts || [];
-  if (deptIds.length === 0) return "-";
-  const dept = deptList.value.find((d) => String(d.id) === String(deptIds[0]));
+  const depts = lab.belongToDepts || [];
+  if (depts.length === 0) return "-";
+  const dept = deptList.value.find(d => depts.includes(d.id) || depts.includes(String(d.id)));
   return dept?.deptName || "-";
 };
 
-// 获取楼栈名称
+// 获取楼栋名称
 const getBuildingName = (labId) => {
   const lab = laboratoryList.value.find((item) => item.id === labId);
   if (!lab) return "-";
-  const building = buildingList.value.find(
-    (b) => String(b.id) === String(lab.belongToBuilding),
-  );
+  const building = buildingList.value.find(b => b.id === lab.belongToBuilding || String(b.id) === String(lab.belongToBuilding));
   return building?.buildingName || "-";
 };
 
-const handleAdd = () => {
-  showAddNode.value = true;
+// 获取实验室编号
+const getLabNo = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  return lab?.laboratoryId || lab?.laboratoryName || labId || "-";
 };
 
-// 实验室列表（用于弹窗等需要完整列表的地方）
-const laboratoryList = computed(() => userStore.getLaboratoryList);
+// 将选中的行数据转换为 AirCondition 类型设备对象（单设备）
+const selectedAirConditionDevice = computed(() => {
+  if (currentSelectedRows.value.length === 0) return null;
+  const row = currentSelectedRows.value[0];
+  return {
+    id: row.id,
+    deviceName: row.airCond || '空调设备',
+    deviceType: 'AirCondition',
+    belongToLaboratoryId: row.labId,
+    pollingEnabled: false,
+    address: row.address || row.rawRecord?.address || 1,
+    selfId: row.selfId || row.rawRecord?.selfId || 1,
+    groupId: row.groupId || row.rawRecord?.groupId || 1,
+    rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
+    socketGatewayId: row.socketGatewayId || row.rawRecord?.socketGatewayId,
+    isLock: row.isLock || row.rawRecord?.isLock || false,
+  };
+});
+
+// 将选中的行数据转换为 AirCondition 类型设备对象列表（批量）
+const selectedAirConditionDevices = computed(() => {
+  return currentSelectedRows.value.map(row => ({
+    id: row.id,
+    deviceName: row.airCond || '空调设备',
+    deviceType: 'AirCondition',
+    belongToLaboratoryId: row.labId,
+    pollingEnabled: false,
+    address: row.address || row.rawRecord?.address || 1,
+    selfId: row.selfId || row.rawRecord?.selfId || 1,
+    groupId: row.groupId || row.rawRecord?.groupId || 1,
+    rs485GatewayId: row.rs485GatewayId || row.rawRecord?.rs485GatewayId || 1,
+    socketGatewayId: row.socketGatewayId || row.rawRecord?.socketGatewayId,
+    isLock: row.isLock || row.rawRecord?.isLock || false,
+  }));
+});
+
+// 切换设备列表展开状态
+const toggleDeviceList = () => {
+  showDeviceList.value = !showDeviceList.value;
+};
+
+// 弹窗关闭处理
+const onRemoteDialogClosed = () => {
+  currentSelectedRows.value = [];
+  showDeviceList.value = false;
+  controlMode.value = 'simple';
+};
+
+// 简单控制配置 - 只显示快速开关
+const simpleControlConfig = {
+  priority: 'NORMAL',
+  showLockWarning: false,
+  showQuickActions: true,
+  showPowerOn: true,
+  showPowerOff: true,
+  showQueryStatus: false,
+  showEnhancedControl: false,
+  showDeviceInfo: true,
+  showInfoId: true,
+  showInfoName: true,
+  showInfoAddress: true,
+  showInfoSelfId: true,
+  showInfoGroupId: false,
+  showInfoGateway: true,
+  showInfoSocketGateway: false,
+  showSectionTitles: true,
+  enhancedControlTitle: '增强控制',
+  deviceInfoTitle: '设备信息',
+  powerOnText: '开机',
+  powerOffText: '关机',
+  queryStatusText: '查询状态',
+  applyButtonText: '应用设置',
+  powerSwitchLabel: '开关',
+  modeLabel: '模式',
+  temperatureLabel: '温度',
+  speedLabel: '风速',
+  tempMin: 16,
+  tempMax: 30,
+  tempStep: 1,
+};
+
+// 增强控制配置 - 显示完整控制面板
+const enhancedControlConfig = {
+  priority: 'NORMAL',
+  showLockWarning: false,
+  showQuickActions: false,
+  showPowerOn: true,
+  showPowerOff: true,
+  showQueryStatus: true,
+  showEnhancedControl: true,
+  showPowerSwitch: true,
+  showMode: true,
+  showTemperature: true,
+  showSpeed: true,
+  showApplyButton: true,
+  showDeviceInfo: true,
+  showInfoId: true,
+  showInfoName: true,
+  showInfoAddress: true,
+  showInfoSelfId: true,
+  showInfoGroupId: false,
+  showInfoGateway: true,
+  showInfoSocketGateway: false,
+  showSectionTitles: true,
+  enhancedControlTitle: '增强控制',
+  deviceInfoTitle: '设备信息',
+  powerOnText: '开机',
+  powerOffText: '关机',
+  queryStatusText: '查询状态',
+  applyButtonText: '应用设置',
+  powerSwitchLabel: '开关',
+  modeLabel: '模式',
+  temperatureLabel: '温度',
+  speedLabel: '风速',
+  tempMin: 16,
+  tempMax: 30,
+  tempStep: 1,
+};
+
+/**
+ * 处理单设备控制命令执行
+ * @param {Task[]} tasks - 任务列表
+ * @param {Function} callback - 执行结果回调
+ */
+const handleControlExecute = async (tasks, callback) => {
+  console.log('【AirConditionControl】执行控制命令:', tasks);
+  
+  try {
+    // 调用实际 API 发送控制命令，task 原封不动发送
+    for (const task of tasks) {
+      const res = await controlDevice(task);
+      console.log('【控制响应】', res);
+    }
+    
+    ElMessage.success('控制命令已发送');
+    
+    if (callback) callback(true, '执行成功');
+    showRemote.value = false;
+    
+  } catch (error) {
+    console.error('控制命令执行失败:', error);
+    ElMessage.error('控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
+};
+
+/**
+ * 处理批量控制命令执行
+ * @param {Task[]} tasks - 任务列表
+ * @param {Function} callback - 执行结果回调
+ */
+const handleBatchControlExecute = async (tasks, callback) => {
+  console.log('【BatchAirConditionControl】批量执行控制命令:', tasks);
+  
+  try {
+    // 批量调用 API 发送控制命令
+    // 使用 Promise.all 并发发送，或者使用 for 循环逐个发送
+    // 这里使用 for 循环逐个发送，避免一次性发送过多请求导致服务器压力过大
+    for (const task of tasks) {
+      const res = await controlDevice(task);
+      console.log('【批量控制响应】', res);
+    }
+    
+    ElMessage.success(`批量控制命令已发送（${tasks.length}台设备）`);
+    
+    if (callback) callback(true, '批量执行成功');
+    showRemote.value = false;
+    
+  } catch (error) {
+    console.error('批量控制命令执行失败:', error);
+    ElMessage.error('批量控制命令执行失败: ' + (error.message || '未知错误'));
+    if (callback) callback(false, error.message || '执行失败');
+  }
+};
+
 const buildingList = computed(() => userStore.getBuildingList);
 const rawDeptData = computed(() => userStore.userInfo.depts || []);
 const deptList = computed(() => rawDeptData.value.map((item) => item.dept));
+const laboratoryList = computed(() => userStore.getLaboratoryList);
 
-// 加载所有设备数据（获取所有实验室的ID传给接口）
+// 表格选择变化处理
+const handleSelectionChange = (selection) => {
+  // 保持与弹窗使用同一数据源
+};
+
+// 加载所有设备数据
 const loadAllDeviceData = async () => {
   isLoading.value = true;
   try {
@@ -389,14 +536,9 @@ const handleRemoteControl = () => {
 
   showRemote.value = true;
 };
-const handleLockSetting = () => {
-  const selection = tableRef.value?.getSelectionRows?.() || [];
-  if (selection.length === 0) {
-    ElMessage.warning("请至少选择一台设备进行锁定设置");
-    return;
-  }
 
-  showLock.value = true;
+const handleLockSetting = () => {
+  ElMessage.warning("锁定设置功能暂未实现");
 };
 
 // 手动刷新
@@ -405,69 +547,20 @@ const handleRefresh = async () => {
   ElMessage.success("刷新成功");
 };
 
-const handleEdit = () => {
-  const selection = tableRef.value?.getSelectionRows?.() || [];
-  if (selection.length !== 1) {
-    ElMessage.warning("请选择一条要修改的记录");
-    return;
-  }
-  console.log("编辑记录：", selection[0]);
+const handleSearch = () => {
+  console.log("【搜索】关键字:", searchKey.value);
 };
 
-const handleDelete = async () => {
-  const selection = tableRef.value?.getSelectionRows?.() || [];
-  if (!selection.length) {
-    ElMessage.warning("请至少选择一条要删除的记录");
-    return;
-  }
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selection.length} 条记录吗？`,
-      "提示",
-      { type: "warning" },
-    );
-    // 批量删除设备
-    const deletePromises = selection.map((row) => deleteDevice(row.deviceId));
-    await Promise.all(deletePromises);
-    ElMessage.success("删除成功");
-    // 清除表格选中状态
-    tableRef.value?.clearSelection?.();
-    // 刷新列表
-    await loadAllDeviceData();
-  } catch (error) {
-    if (error !== "cancel") {
-      console.error("删除失败:", error);
-      ElMessage.error(error.message || "删除失败");
-    }
-  }
+// 分页大小变化
+const handleSizeChange = (val) => {
+  pageSize.value = val;
 };
 
-// 监听搜索关键字变化，实时筛选
-watch(searchKey, () => {
-  currentPage.value = 1; // 搜索时重置到第一页
-});
-
-// 开启轮询
-const handleStartPolling = async () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning("请至少选择一条记录");
-    return;
-  }
-  try {
-    isLoading.value = true;
-    for (const row of selectedRows.value) {
-      if (row.deviceId) {
-        await startDevicePolling(row.deviceId);
-      }
-    }
-    ElMessage.success("轮询开启成功");
-  } catch (error) {
-    console.error("开启轮询失败:", error);
-    ElMessage.error("开启轮询失败");
-  } finally {
-    isLoading.value = false;
-  }
+// 页码变化
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
 };
+
 onMounted(async () => {
   // 先尝试从 localStorage 恢复用户信息
   await userStore.refreshUserInfo();
@@ -493,109 +586,263 @@ onMounted(async () => {
     "【检查】实验室ID列表:",
     laboratoryList.value.map((item) => item.id),
   );
-  console.log("【检查】当前选中实验室:", selectedLab.value);
+  console.log("【检查】当前选中实验室:");
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
-.door-control-page {
-  padding-top: 6px;
-  background: #fafbfc;
+.ac-control-page {
+  padding: 16px;
+  background: #f5f7fa;
+  overflow-y: auto;
   box-sizing: border-box;
+}
+
+.main-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 16px;
+}
+
+/* ---------------- 工具栏 ---------------- */
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
+}
+
+.left-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-input {
+  width: 220px;
+}
+
+.statistics {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.stat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.stat-dot.black {
+  background-color: #303133;
+}
+
+.stat-dot.green {
+  background-color: #67c23a;
+}
+
+/* ---------------- 表格 ---------------- */
+.table-box {
+  background: #fff;
+  border-radius: 4px;
   overflow: hidden;
 }
 
-.main-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+:deep(.el-table--striped .el-table__row--striped td.el-table__cell) {
+  background-color: #fafafa;
 }
 
-.table-box {
-  flex: 1;
-  overflow: auto;
+:deep(.el-table th.el-table__cell) {
+  background-color: #f5f7fa !important;
 }
 
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 12px 0;
-  background-color: #ffffff;
-  border-top: 1px solid #e5e7eb;
-  flex-shrink: 0;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.filter-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  padding: 0 16px;
-}
-
-.filter-row.first-row {
-  background: #f4f7fd;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.select-label {
-  font-size: 14px;
-  color: #606266;
+/* 状态标签样式 */
+.status-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
   font-weight: 500;
 }
 
-.filter-row.second-row {
+.status-tag.status-open {
+  background-color: #f0f9eb;
+  color: #67c23a;
+  border: 1px solid #e1f3d8;
+}
+
+.status-tag.status-close {
+  background-color: #f4f4f5;
+  color: #909399;
+  border: 1px solid #e9e9eb;
+}
+
+/* 在线状态标签 */
+.online-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid;
+}
+
+.online-tag.online {
+  color: #409eff;
+  border-color: #d9ecff;
+  background-color: #ecf5ff;
+}
+
+.online-tag.offline {
+  color: #909399;
+  border-color: #e9e9eb;
+  background-color: #f4f4f5;
+}
+
+/* ---------------- 分页 ---------------- */
+.pagination-wrapper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   align-items: center;
-  padding: 0 0 16px 8px;
+  justify-content: flex-end;
+  gap: 16px;
+  background: #fff;
+  padding: 12px 20px;
+  border-radius: 4px;
 }
 
-.stat {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.button-group.left-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.button-group.right-buttons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-  flex-wrap: wrap;
-}
-
-:deep(.el-button:focus) {
-  outline: none;
-  box-shadow: none;
-}
-
-.device-stat {
+.total-text {
   font-size: 14px;
   color: #606266;
-  margin-left: 12px;
-  white-space: nowrap;
+}
+
+:deep(.el-pagination .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination .el-select .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+:deep(.el-pagination button) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+:deep(.el-pagination .el-pager li) {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-weight: normal;
+}
+
+:deep(.el-pagination .el-pager li.active) {
+  background-color: #409eff;
+  color: #fff;
+  border-color: #409eff;
+}
+
+/* ---------------- 弹窗样式 ---------------- */
+.dialog-empty {
+  padding: 40px;
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+}
+
+.dialog-content {
+  padding: 0 10px;
+}
+
+.control-mode-switch {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.control-mode-switch :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.selected-device-info {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.device-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.device-location {
+  font-size: 13px;
+  color: #909399;
+  margin-left: auto;
+}
+
+:deep(.el-dialog__body) {
+  padding-top: 10px;
+}
+
+/* 批量控制设备列表样式 */
+.batch-device-list {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.batch-device-list-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.batch-device-list-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.device-tag {
+  margin: 0;
 }
 </style>

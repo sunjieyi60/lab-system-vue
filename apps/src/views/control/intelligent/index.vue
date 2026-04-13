@@ -2,192 +2,136 @@
 <template>
   <div class="intelligent-control-page">
     <div class="main-content">
-      <!-- 添加/编辑策略弹窗 -->
-      <AddStrategyDialog
-        v-model="showAddDialog"
-        :edit-data="currentEditData"
-        @confirm="handleAddConfirm"
-        @cancel="handleAddCancel"
-      />
-      <!-- 添加/编辑联动策略弹窗 -->
-      <LinkageStrategyDialog
-        v-model="showLinkageDialog"
-        :edit-data="currentEditData"
-        @confirm="handleLinkageConfirm"
-        @cancel="handleLinkageCancel"
-      />
-      <!-- 第一行：筛选条件 -->
-      <div class="filter-row first-row">
-        <span class="select-label">单位：</span>
-        <el-select v-model="unit" class="filter-select">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in deptList"
-            :key="item.id"
-            :label="item.deptName"
-            :value="item.id"
-          />
-        </el-select>
+      <!-- QuartzTaskForm 对话框 -->
+      <el-dialog
+        v-model="formDialogVisible"
+        :title="formMode === 'create' ? '添加定时策略' : '编辑定时策略'"
+        width="90%"
+        top="5vh"
+        :close-on-click-modal="false"
+        destroy-on-close
+      >
+        <QuartzTaskForm
+          v-if="formDialogVisible"
+          :mode="formMode"
+          :laboratory-id="selectedLabId"
+          :devices="availableDevices"
+          :users="availableUsers"
+          :semesters="availableSemesters"
+          :laboratories="availableLaboratories"
+          :initial-value="currentEditData"
+          :loading="formLoading"
+          @submit="handleFormSubmit"
+          @cancel="handleFormCancel"
+          @lab-change="handleLabChange"
+        />
+      </el-dialog>
 
-        <span class="select-label">楼栋：</span>
-        <el-select v-model="building" class="filter-select">
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in buildingList"
-            :key="item.id"
-            :label="item.buildingName"
-            :value="item.id"
-          />
-        </el-select>
+      <!-- 课表生成对话框 -->
+      <el-dialog
+        v-model="courseScheduleDialogVisible"
+        title="从课表生成定时任务"
+        width="80%"
+        top="5vh"
+        :close-on-click-modal="false"
+        destroy-on-close
+      >
+        <CourseScheduleTaskForm
+          v-if="courseScheduleDialogVisible"
+          :laboratories="availableLaboratories"
+          :loading="courseScheduleLoading"
+          @submit="handleCourseScheduleSubmit"
+          @cancel="handleCourseScheduleCancel"
+        />
+      </el-dialog>
 
-        <span class="select-label">实验室编号：</span>
-        <el-select
-          v-model="labNo"
-          class="filter-select"
-          @change="handleLabChange"
-        >
-          <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in filteredLaboratoryList"
-            :key="item.id"
-            :label="item.laboratoryId"
-            :value="item.id"
-          />
-        </el-select>
+      <!-- 操作栏 -->
+      <div class="operation-bar">
+        <div class="left-buttons">
+          <el-button type="primary" plain @click="handleAdd">添加</el-button>
+          <el-button type="info" plain @click="handleGenerateFromCourse">从课表生成</el-button>
+          <el-button type="danger" plain @click="handleDelete">删除</el-button>
+          <el-button type="success" plain @click="handleBatchEnable">批量启用</el-button>
+          <el-button type="warning" plain @click="handleBatchDisable">批量禁用</el-button>
+        </div>
+        
+        <div style="display: flex;">
+          <div class="search-box">
+            <el-input
+              v-model="searchKey"
+              placeholder="请输入关键字"
+              class="search-input"
+              @keyup.enter="handleSearch"
+            >
+              <template #suffix>
+                <el-icon class="search-icon" @click="handleSearch">
+                  <Search />
+                </el-icon>
+              </template>
+            </el-input>
+          </div>
 
-        <div class="stat">
-          <span>{{ tableData.length }}条策略，{{ enabledCount }}条启用</span>
+          <div class="stat-info">
+            <span class="stat-item">
+              <span class="stat-dot black"></span>
+              共 {{ tableData.length }} 条
+            </span>
+            <span class="stat-item">
+              <span class="stat-dot green"></span>
+              启用 {{ enabledCount }} 条
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- 第二行：操作按钮 -->
-      <div class="filter-row second-row">
-        <div class="button-group left-buttons">
-          <el-button :loading="isLoading" @click="handleRefresh"
-            >手动刷新</el-button
-          >
-          <el-button :loading="isLoading" @click="handleStartPolling"
-            >开启轮询</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            @click="handleBatchEnable"
-            type="success"
-            >批量启用</el-button
-          >
-          <el-button
-            :loading="isLoading"
-            @click="handleBatchDisable"
-            type="warning"
-            >批量禁用</el-button
-          >
-        </div>
-
-        <div class="button-group right-buttons">
-          <el-input
-            v-model="searchKey"
-            placeholder="请输入关键字"
-            class="search-input"
-          >
-            <template #suffix>
-              <img src="/images/搜索.png" style="width: 16px; height: 16px" />
-            </template>
-          </el-input>
-          <el-dropdown
-            split-button
-            type="primary"
-            @click="handleAdd"
-            @command="handleAddCommand"
-          >
-            添加
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="time">定时策略</el-dropdown-item>
-                <el-dropdown-item command="linkage">联动策略</el-dropdown-item>
-                <el-dropdown-item command="scene">场景策略</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-button @click="handleDelete">删除</el-button>
-        </div>
-      </div>
-
-      <!-- 表格盒子 -->
+      <!-- 表格 -->
       <div class="table-box">
         <el-table
           ref="tableRef"
           v-loading="smartControlStore.loading"
           :data="tableData"
-          stripe
           style="width: 100%"
           :header-cell-style="{
-            background: '#226EE04D',
-            color: '#333',
+            background: '#fafafa',
+            color: '#606266',
+            fontWeight: 'bold',
             height: '48px',
           }"
           :row-style="{ height: '56px' }"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column
-            prop="taskName"
-            label="策略名称"
-            align="center"
-            min-width="16"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            prop="cron"
-            label="执行频率"
-            align="center"
-            min-width="15"
-          >
+          <el-table-column prop="strategyType" label="策略类型" align="center" width="120">
             <template #default="{ row }">
-              <el-tag size="small" type="info">{{
-                getCronDesc(row.cron)
-              }}</el-tag>
+              <span>{{ row.strategyType }}</span>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="labName"
-            label="实验室编号"
-            min-width="10"
-            align="center"
-          >
+          <el-table-column prop="strategyName" label="策略名称" align="center" min-width="150" />
+          <el-table-column prop="labNo" label="实验室编号" align="center" width="120">
             <template #default="{ row }">
-              {{ getLabName(row.laboratoryId) }}
+              {{ getLabNo(row.labId) }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="startDate"
-            label="起始时间"
-            align="center"
-            min-width="15"
-          />
-          <el-table-column
-            prop="endDate"
-            label="截止时间"
-            align="center"
-            min-width="15"
-          />
-          <el-table-column prop="enable" label="状态" align="center" width="90">
+          <el-table-column prop="frequency" label="执行频率" align="center" width="120">
+            <template #default="{ row }">
+              {{ row.frequency }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="startDate" label="起始时间" align="center" width="120" />
+          <el-table-column prop="endDate" label="截至时间" align="center" width="120" />
+          <el-table-column prop="status" label="状态" align="center" width="100">
             <template #default="{ row }">
               <el-switch
-                v-model="row.enable"
+                v-model="row.status"
+                :active-value="'启用'"
+                :inactive-value="'禁用'"
                 @change="(val) => handleStatusChange(row, val)"
               />
             </template>
           </el-table-column>
-          <el-table-column
-            label="操作"
-            align="center"
-            min-width="10"
-            fixed="right"
-          >
+          <el-table-column label="操作" align="center" width="100" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" @click="handleEditRow(row)">
-                编辑
-              </el-button>
+              <el-button type="primary" size="small" @click="handleEditRow(row)">编辑</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -210,273 +154,285 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore, useSmartControlStore, useDeviceStore } from "@/stores";
-import {
-  createQuartz,
-  updateQuartz,
-  deleteQuartz,
-  enableQuartz,
-  cancelQuartz,
-} from "@/api/smartControl";
-import { startDevicePolling } from "@/api/device";
-import AddStrategyDialog from "@/views/control/intelligent/components/AddStrategyDialog.vue";
-import LinkageStrategyDialog from "@/views/control/intelligent/components/LinkageStrategyDialog.vue";
+import { Search } from "@element-plus/icons-vue";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useSmartControlStore } from "@/stores/smartControl";
+import { useDeviceStore } from "@/stores/modules/device.js";
+import { useEduStore } from "@/stores/modules/edu.js";
+// 不再直接导入API，使用store方法
+import QuartzTaskForm from "@packages/quartz-kit/src/components/QuartzTaskForm.vue";
+import CourseScheduleTaskForm from "@packages/quartz-kit/src/components/CourseScheduleTaskForm.vue";
 
 const userStore = useUserStore();
 const smartControlStore = useSmartControlStore();
 const deviceStore = useDeviceStore();
+const eduStore = useEduStore();
 
 // 查询条件
-const unit = ref("all");
-const building = ref("all");
-const labNo = ref("all");
 const searchKey = ref("");
 
 // 表格相关
 const tableRef = ref();
-const isLoading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 const selectedRows = ref([]);
 
-// 添加/编辑策略弹窗显示状态
-const showAddDialog = ref(false);
-// 添加/编辑联动策略弹窗显示状态
-const showLinkageDialog = ref(false);
-// 当前编辑的策略数据
+// 表单对话框相关
+const formDialogVisible = ref(false);
+const formMode = ref("create");
+const formLoading = ref(false);
 const currentEditData = ref(null);
 
-// 定时任务列表数据从 store 获取（简化数据，用于表格显示）
-const quartzList = computed(() => smartControlStore.getQuartzList);
-// 完整策略数据从 store 获取（用于编辑）
+// 课表生成对话框相关
+const courseScheduleDialogVisible = ref(false);
+const courseScheduleLoading = ref(false);
+
+// 当前选中的实验室ID（用于表单）
+const selectedLabId = ref(0);
+
+// 可用设备列表（从新的接口获取）
+const availableDevices = ref([]);
+
+// 当前实验室ID（从store获取默认）
+const currentLabId = computed(() => {
+  const labs = userStore.getLaboratoryList;
+  return labs.length > 0 ? labs[0].id : 0;
+});
+
+// 策略数据从 store 获取
 const strategyList = computed(() => smartControlStore.getStrategyList);
 
 // 分页信息
 const pagination = computed(() => smartControlStore.getStrategyPagination);
 
-// 计算属性：楼栋列表
-const buildingList = computed(() => userStore.getBuildingList);
-
-// 计算属性：部门列表
-const rawDeptData = computed(() => userStore.userInfo?.depts || []);
-const deptList = computed(() => rawDeptData.value.map((item) => item.dept));
-
 // 计算属性：实验室列表
 const laboratoryList = computed(() => userStore.getLaboratoryList);
 
-// 过滤后的实验室列表
-const filteredLaboratoryList = computed(() => {
-  let result = laboratoryList.value;
-
-  // 按楼栋过滤
-  if (building.value && building.value !== "all") {
-    result = result.filter(
-      (room) => String(room.belongToBuilding) === String(building.value),
-    );
-  }
-
-  // 按单位过滤
-  if (unit.value && unit.value !== "all") {
-    result = result.filter((room) => {
-      const depts = room.belongToDepts || [];
-      return depts.map(String).includes(String(unit.value));
-    });
-  }
-
-  return result;
-});
-
-// 计算属性：将定时任务数据映射为表格数据（直接使用 /quartz/list 返回的数据）
-const mappedTableData = computed(() => {
-  console.log("【智能控制】quartzList原始数据:", quartzList.value);
-  if (!quartzList.value || quartzList.value.length === 0) {
-    console.log("【智能控制】quartzList为空");
-    return [];
-  }
-  // 直接使用 API 返回的数据结构，添加 taskId 兼容原有代码
-  return quartzList.value.map((item) => ({
-    ...item,
-    taskId: item.id,
+// 可用实验室列表（传递给表单）
+const availableLaboratories = computed(() => {
+  return laboratoryList.value.map(lab => ({
+    id: lab.id,
+    laboratoryName: lab.laboratoryName,
+    laboratoryId: lab.laboratoryId,
   }));
 });
 
-// Cron 表达式转可读描述
-const getCronDesc = (cron) => {
-  if (!cron) return "-";
-  // 标准化 cron 表达式（去除多余空格）
-  const normalizedCron = cron.trim().replace(/\s+/g, " ");
-  const cronMap = {
-    "*/5 * * * * ?": "每5秒",
-    "*/10 * * * * ?": "每10秒",
-    "*/30 * * * * ?": "每30秒",
-    "0 * * * * ?": "每分钟",
-    "0 */5 * * * ?": "每5分钟",
-    "0 0/5 * * * ?": "每5分钟",
-    "0 */10 * * * ?": "每10分钟",
-    "0 0/10 * * * ?": "每10分钟",
-    "0 */30 * * * ?": "每30分钟",
-    "0 0/30 * * * ?": "每30分钟",
-    "0 0 * * * ?": "每小时",
-    "0 0 0 * * ?": "每天",
-  };
-  return cronMap[normalizedCron] || normalizedCron;
+// 加载实验室设备列表
+const loadLabDevices = async (labId) => {
+  if (!labId) return;
+  try {
+    const devices = await deviceStore.fetchDevicesByLabId(labId);
+    availableDevices.value = devices;
+  } catch (error) {
+    console.error("加载实验室设备失败:", error);
+    availableDevices.value = [];
+  }
 };
 
-// 计算属性：表格数据（带筛选和分页）
+// 实验室切换处理
+const handleLabChange = (labId) => {
+  selectedLabId.value = labId;
+  loadLabDevices(labId);
+};
+
+// 可用用户列表（从用户store获取）
+const availableUsers = computed(() => {
+  // 这里可以从userStore或其他地方获取用户列表
+  // 暂时返回空数组，实际项目中应该根据业务获取
+  return [];
+});
+
+// 可用学期列表（从 edu store 获取）
+const availableSemesters = computed(() => {
+  const termList = eduStore.getAllTerms;
+  return termList.map(term => ({
+    id: term.id,
+    name: term.termName || term.name || `学期${term.id}`,
+    startDate: term.startDate,
+    endDate: term.endDate,
+    totalWeeks: term.totalWeeks,
+  }));
+});
+
+// 获取实验室编号
+const getLabNo = (labId) => {
+  const lab = laboratoryList.value.find((item) => item.id === labId);
+  return lab?.laboratoryId || labId || "-";
+};
+
+// 计算属性：将策略数据映射为表格数据
+const mappedTableData = computed(() => {
+  console.log("【智能控制】strategyList原始数据:", strategyList.value);
+  if (!strategyList.value || strategyList.value.length === 0) {
+    return [];
+  }
+  return strategyList.value.map((item) => {
+    const task = item.task || {};
+    const actionGroups = item.actionGroups || [];
+    const conditionGroups = item.conditionGroups || [];
+    const timeRule = item.timeRule || {};
+
+    // 判断策略类型
+    let strategyType = "定时策略";
+    if (conditionGroups.length > 0) {
+      strategyType = "联动策略";
+    } else if (actionGroups.length > 1) {
+      strategyType = "场景策略";
+    }
+
+    // Cron 表达式转执行频率
+    const getFrequency = (cron) => {
+      if (!cron) return "-";
+      const cronMap = {
+        "*/5 * * * * ?": "每5秒",
+        "*/10 * * * * ?": "每10秒",
+        "*/30 * * * * ?": "每30秒",
+        "0 * * * * ?": "1分钟",
+        "0 */5 * * * ?": "每5分钟",
+        "0 */10 * * * ?": "每10分钟",
+        "0 */30 * * * ?": "每30分钟",
+        "0 0 * * * ?": "每小时",
+        "0 0 0 * * ?": "每天",
+      };
+      return cronMap[cron] || cron;
+    };
+    const frequency = getFrequency(task.cron);
+
+    return {
+      id: task.id,
+      taskId: task.id,
+      strategyName: task.taskName || "-",
+      strategyType: strategyType,
+      labId: task.laboratoryId,
+      frequency: frequency,
+      startDate: task.startDate || "-",
+      endDate: task.endDate || "-",
+      status: task.enable ? "启用" : "禁用",
+      rawData: item,
+    };
+  });
+});
+
+// 计算属性：表格数据（带筛选和分页）- 使用新的filter实现
 const tableData = computed(() => {
-  console.log("【智能控制】mappedTableData:", mappedTableData.value);
   let data = [...mappedTableData.value];
-  console.log("【智能控制】筛选前数据条数:", data.length);
 
-  // 按楼栋筛选
-  if (building.value && building.value !== "all") {
-    const labIdsInBuilding = laboratoryList.value
-      .filter((lab) => String(lab.belongToBuilding) === String(building.value))
-      .map((lab) => String(lab.id));
-    data = data.filter((item) =>
-      labIdsInBuilding.includes(String(item.laboratoryId)),
-    );
-  }
-
-  // 按单位筛选
-  if (unit.value && unit.value !== "all") {
-    const labIdsInUnit = laboratoryList.value
-      .filter((lab) => {
-        const depts = lab.belongToDepts || [];
-        return depts.map(String).includes(String(unit.value));
-      })
-      .map((lab) => String(lab.id));
-    data = data.filter((item) =>
-      labIdsInUnit.includes(String(item.laboratoryId)),
-    );
-  }
-
-  // 按实验室筛选
-  if (labNo.value !== "all") {
-    data = data.filter(
-      (item) => String(item.laboratoryId) === String(labNo.value),
-    );
-  }
-
-  // 搜索关键字筛选
+  // 搜索关键字筛选 - 所有row属性字符串拼接，分隔符为"-"
   if (searchKey.value.trim()) {
     const k = searchKey.value.trim().toLowerCase();
-    data = data.filter((item) =>
-      Object.values(item).some((val) => String(val).toLowerCase().includes(k)),
-    );
+    data = data.filter((item) => {
+      const searchStr = [
+        item.strategyType,
+        item.strategyName,
+        getLabNo(item.labId),
+        item.frequency,
+        item.startDate,
+        item.endDate,
+        item.status,
+      ].join("-").toLowerCase();
+      return searchStr.includes(k);
+    });
   }
 
-  // 使用后端分页
   total.value = pagination.value.total || data.length;
-  console.log("【智能控制】最终表格数据:", data, "总条数:", total.value);
   return data;
 });
 
 // 启用的策略数量
 const enabledCount = computed(() => {
-  return mappedTableData.value.filter((item) => item.enable === true).length;
+  return mappedTableData.value.filter((item) => item.status === "启用").length;
 });
-
-// 获取实验室名称
-const getLabName = (labId) => {
-  const lab = laboratoryList.value.find((item) => item.id === labId);
-  return lab?.laboratoryId || lab?.laboratoryName || labId || "-";
-};
-
-// 获取设备类型名称
-const getDeviceTypeName = (deviceType) => {
-  const typeMap = {
-    AirCondition: "空调",
-    CircuitBreak: "断路器",
-    Light: "照明",
-    Sensor: "传感器",
-    Access: "门禁",
-  };
-  return typeMap[deviceType] || deviceType;
-};
 
 // 表格选择变化
 const handleSelectionChange = (selection) => {
   selectedRows.value = selection;
 };
 
-// 实验室下拉框变化
-const handleLabChange = (val) => {
-  console.log("【实验室选择变化】选中值:", val);
-};
-
-// 手动刷新
-const handleRefresh = async () => {
-  isLoading.value = true;
-  try {
-    await loadStrategyData();
-    ElMessage.success("刷新成功");
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 // 加载策略数据
 const loadStrategyData = async () => {
-  // 等待实验室列表加载完成
-  if (laboratoryList.value.length === 0) {
-    console.log("【智能控制】等待实验室列表加载...");
-    return;
-  }
-
   const params = {
     current: currentPage.value,
     size: pageSize.value,
   };
-
-  // 准备实验室ID列表
-  let labIds = [];
-  if (labNo.value && labNo.value !== "all") {
-    // 如果选择了特定实验室，只请求该实验室
-    labIds = [labNo.value];
-  } else {
-    // 如果没选，用所有实验室的ID
-    labIds = laboratoryList.value.map((lab) => lab.id);
+  if (laboratoryList.value.length > 0) {
+    params.laboratoryId = laboratoryList.value[0].id;
   }
+  await smartControlStore.fetchStrategyListByLab(params);
+};
 
-  console.log("【智能控制】请求参数:", params);
-  console.log("【智能控制】实验室ID列表:", labIds);
+// 添加
+const handleAdd = async () => {
+  formMode.value = "create";
+  currentEditData.value = null;
+  // 设置默认实验室并加载设备
+  selectedLabId.value = currentLabId.value;
+  await loadLabDevices(selectedLabId.value);
+  formDialogVisible.value = true;
+};
 
-  // 同时获取简化列表和完整策略数据
-  await smartControlStore.fetchAllQuartzData(params, labIds);
+// 从课表生成
+const handleGenerateFromCourse = () => {
+  courseScheduleDialogVisible.value = true;
+};
 
-  console.log(
-    "【智能控制】Store定时任务列表(quartzList):",
-    smartControlStore.getQuartzList,
-  );
-  console.log(
-    "【智能控制】Store完整策略列表(strategyList):",
-    smartControlStore.getStrategyList,
-  );
-
-  // 打印 strategyList 的详细结构
-  const strategyList = smartControlStore.getStrategyList;
-  if (strategyList.length > 0) {
-    console.log(
-      "【智能控制】strategyList[0] 结构:",
-      JSON.parse(JSON.stringify(strategyList[0])),
-    );
-    console.log("【智能控制】strategyList[0].task:", strategyList[0].task);
-    console.log(
-      "【智能控制】strategyList[0].task.id:",
-      strategyList[0].task?.id,
-    );
-  } else {
-    console.warn("【智能控制】strategyList 为空！");
+// 课表生成提交
+const handleCourseScheduleSubmit = async (data) => {
+  courseScheduleLoading.value = true;
+  try {
+    await smartControlStore.generateFromCourseSchedule(data);
+    ElMessage.success("课表任务生成成功");
+    courseScheduleDialogVisible.value = false;
+    // 刷新列表
+    loadStrategyData();
+  } catch (error) {
+    console.error("课表生成失败:", error);
+    // 错误消息已在store中显示
+  } finally {
+    courseScheduleLoading.value = false;
   }
+};
 
-  console.log(
-    "【智能控制】Store分页信息:",
-    smartControlStore.getStrategyPagination,
-  );
+// 课表生成取消
+const handleCourseScheduleCancel = () => {
+  courseScheduleDialogVisible.value = false;
+};
+
+// 行内编辑
+const handleEditRow = async (row) => {
+  formMode.value = "edit";
+  // 转换数据为 QuartzTaskForm 需要的格式
+  currentEditData.value = row.rawData;
+  // 设置实验室ID并加载设备
+  selectedLabId.value = row.labId || currentLabId.value;
+  await loadLabDevices(selectedLabId.value);
+  formDialogVisible.value = true;
+};
+
+// 表单提交
+const handleFormSubmit = async ({ isCreate, data }) => {
+  formLoading.value = true;
+  try {
+    if (isCreate) {
+      await smartControlStore.createStrategy(data);
+    } else {
+      await smartControlStore.updateStrategy(data);
+    }
+    formDialogVisible.value = false;
+    loadStrategyData();
+  } catch (error) {
+    console.error(isCreate ? "创建策略失败:" : "更新策略失败:", error);
+    // 错误消息已在store中显示
+  } finally {
+    formLoading.value = false;
+  }
+};
+
+// 表单取消
+const handleFormCancel = () => {
+  formDialogVisible.value = false;
 };
 
 // 批量启用
@@ -486,16 +442,12 @@ const handleBatchEnable = async () => {
     return;
   }
   try {
-    const enablePromises = selectedRows.value.map((row) =>
-      enableQuartz(row.taskId),
-    );
-    await Promise.all(enablePromises);
-    ElMessage.success(`已启用 ${selectedRows.value.length} 条策略`);
-    // 刷新列表
-    loadStrategyData();
+    const taskIds = selectedRows.value.map((row) => row.taskId);
+    await smartControlStore.batchEnableStrategy(taskIds);
+    // 不需要重新加载，store已更新本地状态
   } catch (error) {
     console.error("批量启用失败:", error);
-    ElMessage.error(error.message || "启用失败");
+    // 错误消息已在store中显示
   }
 };
 
@@ -506,146 +458,31 @@ const handleBatchDisable = async () => {
     return;
   }
   try {
-    const cancelPromises = selectedRows.value.map((row) =>
-      cancelQuartz(row.taskId),
-    );
-    await Promise.all(cancelPromises);
-    ElMessage.success(`已禁用 ${selectedRows.value.length} 条策略`);
-    // 刷新列表
-    loadStrategyData();
+    const taskIds = selectedRows.value.map((row) => row.taskId);
+    await smartControlStore.batchDisableStrategy(taskIds);
+    // 不需要重新加载，store已更新本地状态
   } catch (error) {
     console.error("批量禁用失败:", error);
-    ElMessage.error(error.message || "禁用失败");
+    // 错误消息已在store中显示
   }
 };
 
 // 状态切换
 const handleStatusChange = async (row, val) => {
-  console.log("【状态切换】", row, val);
   try {
-    if (val === true) {
-      await enableQuartz(row.taskId);
+    if (val === "启用") {
+      await smartControlStore.enableStrategy(row.taskId);
     } else {
-      await cancelQuartz(row.taskId);
+      await smartControlStore.disableStrategy(row.taskId);
     }
-    ElMessage.success(
-      `任务"${row.taskName}"已${val === true ? "启用" : "禁用"}`,
-    );
-    // 刷新列表
-    loadStrategyData();
+    ElMessage.success(`策略"${row.strategyName}"已${val === "启用" ? "启用" : "禁用"}`);
+    // store已更新本地状态，不需要重新加载
   } catch (error) {
     console.error("状态切换失败:", error);
-    ElMessage.error(error.message || "操作失败");
+    // 错误消息已在store中显示
     // 恢复原状态
-    row.enable = !val;
+    row.status = val === "启用" ? "禁用" : "启用";
   }
-};
-
-// 添加
-const handleAdd = () => {
-  console.log("添加策略");
-  currentEditData.value = null; // 新增模式
-  showAddDialog.value = true;
-};
-
-// 添加命令处理
-const handleAddCommand = (command) => {
-  const typeMap = {
-    time: "定时策略",
-    linkage: "联动策略",
-    scene: "场景策略",
-  };
-  console.log("添加" + typeMap[command]);
-  // 打开添加策略弹窗
-  currentEditData.value = null; // 新增模式
-
-  // 联动策略使用专门的弹窗
-  if (command === "linkage") {
-    showLinkageDialog.value = true;
-  } else {
-    showAddDialog.value = true;
-  }
-};
-
-// 添加/编辑策略确认
-const handleAddConfirm = async (data) => {
-  console.log("保存策略数据:", data);
-
-  try {
-    // 判断是新增还是编辑（有 task.id 且从 store 能找到对应数据则为编辑）
-    const isEdit = smartControlStore.getStrategyByTaskId(String(data.task.id));
-
-    if (isEdit) {
-      // 编辑模式：调用更新接口
-      const res = await updateQuartz(data);
-      console.log("更新策略成功:", res);
-      ElMessage.success(`策略"${data.task.taskName}"更新成功`);
-    } else {
-      // 新增模式：调用创建接口
-      const res = await createQuartz(data);
-      console.log("创建策略成功:", res);
-      ElMessage.success(`策略"${data.task.taskName}"创建成功`);
-    }
-
-    // 刷新列表
-    loadStrategyData();
-    // 清空编辑状态
-    currentEditData.value = null;
-  } catch (error) {
-    console.error("保存策略失败:", error);
-    ElMessage.error(error.message || "保存策略失败");
-  }
-};
-
-// 添加/编辑策略取消
-const handleAddCancel = () => {
-  console.log("取消添加/编辑策略");
-  // 清空编辑状态
-  currentEditData.value = null;
-};
-
-// 添加/编辑联动策略确认（已在弹窗中调用接口，此处仅刷新列表）
-const handleLinkageConfirm = async (data) => {
-  console.log("联动策略已保存:", data);
-  // 刷新列表
-  loadStrategyData();
-  // 清空编辑状态
-  currentEditData.value = null;
-};
-
-// 添加/编辑联动策略取消
-const handleLinkageCancel = () => {
-  console.log("取消添加/编辑联动策略");
-  // 清空编辑状态
-  currentEditData.value = null;
-};
-
-// 修改（批量）
-const handleEdit = () => {
-  const selection = tableRef.value?.getSelectionRows?.() || [];
-  if (selection.length !== 1) {
-    ElMessage.warning("请选择一条要修改的记录");
-    return;
-  }
-  const row = selection[0];
-  console.log("编辑记录：", row);
-  // 从 strategyList（完整数据）中查找对应的策略数据
-  // 使用 String() 确保类型匹配
-  const fullData = smartControlStore.getStrategyByTaskId(String(row.id));
-  console.log("完整策略数据：", fullData);
-  currentEditData.value = fullData || null;
-  showAddDialog.value = true;
-};
-
-// 行内编辑
-const handleEditRow = (row) => {
-  console.log("编辑行：", row);
-  // 从 strategyList（完整数据）中查找对应的策略数据
-  // 使用 String() 确保类型匹配
-  const fullData = smartControlStore.getStrategyByTaskId(String(row.id));
-  console.log("完整策略数据：", fullData);
-  currentEditData.value = fullData || null;
-  showAddDialog.value = true;
 };
 
 // 删除（批量）
@@ -655,73 +492,26 @@ const handleDelete = async () => {
     ElMessage.warning("请至少选择一条要删除的记录");
     return;
   }
-
   try {
     await ElMessageBox.confirm(
       `确定要删除选中的 ${selection.length} 条策略吗？`,
       "提示",
-      { type: "warning" },
+      { type: "warning" }
     );
-
-    // 批量删除
-    const deletePromises = selection.map((row) => deleteQuartz(row.taskId));
-    await Promise.all(deletePromises);
-
-    ElMessage.success(`成功删除 ${selection.length} 条策略`);
-    // 刷新列表
-    loadStrategyData();
+    const taskIds = selection.map((row) => row.taskId);
+    await smartControlStore.batchDeleteStrategy(taskIds);
+    // store已更新本地状态，不需要重新加载
   } catch (error) {
     if (error !== "cancel") {
       console.error("批量删除失败:", error);
-      ElMessage.error(error.message || "删除失败");
+      // 错误消息已在store中显示
     }
   }
 };
 
-// 行内删除
-const handleDeleteRow = async (row) => {
-  try {
-    await ElMessageBox.confirm(`确定要删除任务"${row.taskName}"吗？`, "提示", {
-      type: "warning",
-    });
-
-    await deleteQuartz(row.taskId);
-    ElMessage.success("删除成功");
-    // 刷新列表
-    loadStrategyData();
-  } catch (error) {
-    if (error !== "cancel") {
-      console.error("删除失败:", error);
-      ElMessage.error(error.message || "删除失败");
-    }
-  }
-};
-
-// 监听搜索关键字变化，实时筛选
-watch(searchKey, () => {
-  currentPage.value = 1; // 搜索时重置到第一页
-});
-
-// 开启轮询
-const handleStartPolling = async () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning("请至少选择一条记录");
-    return;
-  }
-  try {
-    isLoading.value = true;
-    for (const row of selectedRows.value) {
-      if (row.deviceId) {
-        await startDevicePolling(row.deviceId);
-      }
-    }
-    ElMessage.success("轮询开启成功");
-  } catch (error) {
-    console.error("开启轮询失败:", error);
-    ElMessage.error("开启轮询失败");
-  } finally {
-    isLoading.value = false;
-  }
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1;
 };
 
 // 分页大小变化
@@ -738,176 +528,116 @@ const handleCurrentChange = (val) => {
 };
 
 onMounted(async () => {
-  // 刷新用户信息
   await userStore.refreshUserInfo();
-  console.log("【智能控制】用户信息加载完成");
-  console.log("【智能控制】实验室列表:", laboratoryList.value);
-  console.log("【智能控制】楼栋列表:", buildingList.value);
-  console.log("【智能控制】部门列表:", deptList.value);
-
-  // 先加载设备数据（用于设备ID到设备名的映射）
-  if (laboratoryList.value.length > 0) {
-    const labIds = laboratoryList.value.map((lab) => lab.id);
-    await deviceStore.fetchAllDeviceTypes(labIds);
-    console.log("【智能控制】设备数据加载完成");
-
-    // 实验室列表已加载，加载策略数据
-    await loadStrategyData();
-  } else {
-    console.log("【智能控制】等待实验室列表加载...");
-  }
-
-  console.log("【智能控制】页面加载完成");
-});
-
-// 监听实验室选择变化，自动刷新数据
-watch(labNo, async (newVal) => {
-  currentPage.value = 1;
+  // 初始化学期数据
+  await eduStore.initTermData();
   await loadStrategyData();
 });
 
-// 监听实验室列表变化，加载完成后自动请求策略数据
-watch(
-  laboratoryList,
-  async (newVal) => {
-    if (newVal.length > 0 && smartControlStore.getQuartzList.length === 0) {
-      console.log("【智能控制】实验室列表已加载，开始加载策略数据");
-      await loadStrategyData();
-    }
-  },
-  { immediate: false },
-);
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
+.intelligent-control-page {
+  padding: 16px;
+  background: #f5f7fa;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
 .main-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 16px;
 }
 
-.filter-row {
+/* 操作栏 */
+.operation-bar {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  padding: 0 16px;
+  gap: 16px;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  justify-content: space-between;
 }
 
-/* 第一行筛选区 */
-.filter-row.first-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  background: #f4f7fd;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  height: auto;
-}
-
-.select-label {
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.filter-select {
-  width: 160px;
-  margin-right: 20px;
-}
-
-/* 筛选项样式 */
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filter-item label {
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-/* 第二行操作按钮区 */
-.filter-row.second-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  padding: 0 0 16px 8px;
-}
-
-.button-group.left-buttons {
+.left-buttons {
   display: flex;
   gap: 10px;
 }
 
-.button-group.right-buttons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-  margin-right: 10px;
-  flex-wrap: wrap;
+.search-box {
+  flex: 1;
+  max-width: 280px;
 }
 
 .search-input {
-  width: 180px;
+  width: 100%;
 }
 
-.stat {
-  margin-left: auto;
+.search-icon {
+  cursor: pointer;
+  color: #909399;
+}
+
+.search-icon:hover {
+  color: #409eff;
+}
+
+/* 统计信息 */
+.stat-info {
   display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  line-height: 1.8;
+  gap: 20px;
+  align-items: center;
+  margin-left: 2rem;
 }
 
-.table-box {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  flex: 1;
-  overflow: auto;
-}
-
-:deep(.el-table--striped .el-table__row--striped td.el-table__cell) {
-  background-color: #226ee00d !important;
-}
-
-.button-group {
-  display: flex;
-  /* flex: 1 1 auto; */
-  min-width: 0;
-}
-
-.pagination-box {
-  background: #fff;
+.stat-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 12px 20px;
-  border-top: 1px solid #e5e7eb;
-  flex-shrink: 0;
+  gap: 6px;
+  font-size: 14px;
+  color: #606266;
 }
 
-/* 页面布局 - 分页器固定在底部 */
-.intelligent-control-page {
-  padding-top: 6px;
-  background: #fafbfc;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-sizing: border-box;
+.stat-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.stat-dot.black {
+  background-color: #333;
+}
+
+.stat-dot.green {
+  background-color: #67c23a;
+}
+
+/* 表格 */
+.table-box {
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  flex: 1;
   overflow: hidden;
 }
 
-/* 表格区域占据剩余空间 */
-.table-wrapper {
-  flex: 1;
-  overflow: auto;
+/* 分页 */
+.pagination-box {
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 :deep(.el-button:focus) {
@@ -915,29 +645,10 @@ watch(
   box-shadow: none;
 }
 
-/* 固定列样式修复 */
-:deep(.el-table__fixed-right) {
-  z-index: 2 !important;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-:deep(.el-table__fixed-right::before) {
-  background-color: transparent !important;
-}
-
-:deep(.el-table__header-wrapper .el-table__fixed-right) {
-  z-index: 3 !important;
-}
-
-:deep(.el-table__body-wrapper .el-table__fixed-right) {
-  z-index: 2 !important;
-}
-
-:deep(.el-table__fixed-right .el-table__cell) {
-  background-color: #fff !important;
-}
-
-:deep(.el-table__fixed-right .el-table__header-cell) {
-  background-color: #226ee04d !important;
+/* 对话框样式 */
+:deep(.el-dialog__body) {
+  padding: 10px 20px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 </style>

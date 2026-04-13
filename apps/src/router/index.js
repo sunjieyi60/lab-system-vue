@@ -17,6 +17,7 @@ const routes = [
       {
         path: "dashboard",
         component: () => import("@/views/dashboard/index.vue"),
+        meta: { hideSubMenu: true },
       },
       { path: "base", component: () => import("@/views/base/index.vue") },
     ],

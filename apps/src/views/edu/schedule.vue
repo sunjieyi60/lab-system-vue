@@ -39,10 +39,12 @@
           </el-icon></template>
         导入课表
       </el-button>
-      <el-button>
-        <template #icon><el-icon>
+      <el-button @click="handleRefresh">
+        <template #icon>
+          <el-icon :class="{ 'is-rotating': refreshing }">
             <Refresh />
-          </el-icon></template>
+          </el-icon>
+        </template>
         刷新
       </el-button>
 
@@ -60,7 +62,7 @@
       </el-button>
     </div>
     <!-- 排课组件 -->
-    <div class="calendar-wrapper">
+    <div class="calendar-wrapper" v-loading="courseLoading" element-loading-text="加载中...">
       <CourseCalendar :courses="courseList" :selected-schedule-id="selectedScheduleId"
         @select-schedule="handleSelectSchedule" />
     </div>
@@ -219,6 +221,8 @@ const currentLaboratoryId = computed(() => {
 
 // 课表数据
 const courseList = ref([]);
+const courseLoading = ref(false);
+const refreshing = ref(false);
 
 // 当前选中的排课实例ID
 const selectedScheduleId = ref(null);
@@ -239,6 +243,7 @@ const fetchCourseSchedule = async (laboratoryId) => {
     courseList.value = [];
     return;
   }
+  courseLoading.value = true;
   try {
     const res = await getCourseSchedule([laboratoryId]);
     if (res.data?.ok) {
@@ -261,6 +266,8 @@ const fetchCourseSchedule = async (laboratoryId) => {
   } catch (error) {
     console.error("获取课表数据失败:", error);
     courseList.value = [];
+  } finally {
+    courseLoading.value = false;
   }
 };
 
@@ -490,7 +497,7 @@ const handleScheduleDelete = async (rowData) => {
     }
   } catch (error) {
     console.error("删除课程失败:", error);
-    ElMessage.error("删除失败，请检查网络或稍后重试");
+    ElMessage.error(error.response?.data?.msg || "删除失败");
   }
 };
 
@@ -542,7 +549,7 @@ const handleDelete = () => {
         }
       } catch (error) {
         console.error("删除课程失败:", error);
-        ElMessage.error("删除失败，请检查网络或稍后重试");
+        ElMessage.error(error.response?.data?.msg || "删除失败");
       }
     })
     .catch(() => {
@@ -591,7 +598,7 @@ const handleDeleteAll = () => {
         }
       } catch (error) {
         console.error("全部删除课程失败:", error);
-        ElMessage.error("删除失败，请检查网络或稍后重试");
+        ElMessage.error(error.response?.data?.msg || "删除失败");
       }
     })
     .catch(() => {
@@ -600,9 +607,22 @@ const handleDeleteAll = () => {
     });
 };
 
-// 刷新课表方法
-const refreshCourseCalendar = () => {
-  // TODO: 调用CourseCalendar的刷新方法
+// 刷新
+const handleRefresh = async () => {
+  refreshing.value = true;
+  try {
+    await userStore.refreshUserInfo();
+    await fetchBaseData();
+    if (room.value) {
+      await fetchCourseSchedule(room.value);
+    }
+    ElMessage.success("刷新成功");
+  } catch (error) {
+    console.error("刷新失败:", error);
+    ElMessage.error(error.response?.data?.msg || "刷新失败");
+  } finally {
+    refreshing.value = false;
+  }
 };
 
 // 监听实验室选择变化
@@ -714,6 +734,19 @@ onMounted(async () => {
   background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
   border: 0;
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.35);
+}
+
+.is-rotating {
+  animation: rotate 0.6s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .button-bar .el-button--primary:hover {

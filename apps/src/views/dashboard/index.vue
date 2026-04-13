@@ -130,7 +130,7 @@ const eduStore = useEduStore();
 // 报警日志数据
 const alarmData = ref([]);
 const currentPage = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(8);
 const total = ref(0);
 const timeRange = ref("week");
 const isLoading = ref(false);
@@ -382,7 +382,7 @@ const loadLabData = async (semesterId) => {
     console.log("[loadLabData] 解析后数据:", overviewLabData.value);
   } catch (error) {
     console.error("[loadLabData] 获取实验室概览信息失败:", error);
-    ElMessage.error("获取实验室概览信息失败");
+    ElMessage.error(error.response?.data?.msg || "获取实验室概览信息失败");
     overviewLabData.value = [];
   } finally {
     labOverviewLoading.value = false;
@@ -452,14 +452,14 @@ const loadLabData = async (semesterId) => {
 
 .alarm-content {
   flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .alarm-item {
   padding: 10px 0;
   border-bottom: 1px solid #f0f0f0;
-  min-width: 100%;
 }
 
 .alarm-item:last-child {
@@ -476,9 +476,12 @@ const loadLabData = async (semesterId) => {
   font-size: 13px;
   color: #333;
   line-height: 1.4;
-  white-space: nowrap;
-  display: inline-block;
-  min-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
 }
 
 .pagination-wrapper {

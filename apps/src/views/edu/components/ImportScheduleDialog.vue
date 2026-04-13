@@ -292,7 +292,7 @@ function parseExcel(file) {
       }
     } catch (error) {
       console.error("解析失败:", error);
-      ElMessage.error("文件解析失败，请检查文件格式");
+      ElMessage.error(error.response?.data?.msg || "文件解析失败，请检查文件格式");
     }
   };
 
@@ -458,7 +458,7 @@ async function handleImport() {
     }
   } catch (error) {
     console.error("导入失败:", error);
-    ElMessage.error("导入过程发生错误");
+    ElMessage.error(error.response?.data?.msg || "导入过程发生错误");
   } finally {
     importing.value = false;
   }

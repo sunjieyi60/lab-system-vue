@@ -85,7 +85,6 @@
     :close-on-click-modal="false"
     custom-class="course-time-dialog"
     append-to-body
-    :style="{ left: 'calc(50% + 250px)' }"
   >
     <div class="time-form">
       <!-- 周次 -->
@@ -541,7 +540,7 @@ const submit = async () => {
     }
   } catch (error) {
     console.error("提交失败:", error);
-    ElMessage.error("提交失败，请检查网络或联系管理员");
+    ElMessage.error(error.response?.data?.msg || "提交失败");
   } finally {
     loading.value = false;
   }

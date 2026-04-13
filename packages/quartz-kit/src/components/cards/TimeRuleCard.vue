@@ -62,9 +62,9 @@
             style="width: 100%"
             :disabled="!hasSemester"
           >
-            <el-option label="全部" value="ALL" />
-            <el-option label="单周" value="ODD" />
-            <el-option label="双周" value="EVEN" />
+            <el-option label="全部" value="Both" />
+            <el-option label="单周" value="Single" />
+            <el-option label="双周" value="Double" />
           </el-select>
         </el-form-item>
       </el-col>

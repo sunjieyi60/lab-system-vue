@@ -259,7 +259,7 @@ const submitting = ref(false)
 
 // 表单数据
 const formData = reactive({
-  deviceId: 1 as number | undefined,
+  deviceId: 1 as number,
   deviceType: '' as DeviceType | '',
   deviceName: '',
   belongToLaboratoryId: undefined as number | undefined,
@@ -313,7 +313,7 @@ watch(
   (data) => {
     if (data && props.mode === 'edit') {
       const device = data as any
-      formData.deviceId = device.id
+      formData.deviceId = device.deviceId
       formData.deviceType = device.deviceType as DeviceType
       formData.deviceName = device.deviceName
       formData.belongToLaboratoryId = device.belongToLaboratoryId
@@ -435,7 +435,7 @@ async function handleSubmit() {
       } else {
         // 编辑模式
         const data: UpdateDeviceDTO = {
-          deviceId: props.initialData!.id,
+          deviceId: formData.deviceId,
           deviceName: formData.deviceName,
           pollingEnabled: formData.pollingEnabled,
         }

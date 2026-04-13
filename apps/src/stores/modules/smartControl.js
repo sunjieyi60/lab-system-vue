@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import {
   getQuartzList,
   getQuartzListByLab,
+  getQuartzListByLabBatch,
   createQuartz,
   updateQuartz,
   deleteQuartz,
@@ -122,6 +123,49 @@ export const useSmartControlStore = defineStore("smartControl", {
         };
       } catch (error) {
         console.error("【SmartControlStore】获取策略列表失败:", error);
+        ElMessage.error("获取策略列表失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 批量按实验室查询任务（支持多实验室ID列表）---- */
+    async fetchStrategyListByLabBatch(laboratoryIds = []) {
+      if (!laboratoryIds || laboratoryIds.length === 0) {
+        console.warn("【SmartControlStore】实验室ID列表为空");
+        this.strategyList = [];
+        this.strategyPagination = {
+          total: 0,
+          size: 20,
+          current: 1,
+          pages: 1,
+        };
+        return {
+          list: [],
+          pagination: this.strategyPagination,
+        };
+      }
+      this.loading = true;
+      try {
+        console.log("【SmartControlStore】批量查询实验室:", laboratoryIds);
+        const res = await getQuartzListByLabBatch(laboratoryIds);
+        console.log("【SmartControlStore】批量查询API返回:", res);
+        const records = res.data?.data || [];
+        this.strategyList = records;
+        this.strategyPagination = {
+          total: records.length,
+          size: records.length,
+          current: 1,
+          pages: 1,
+        };
+        console.log("【SmartControlStore】批量查询结果:", this.strategyList);
+        return {
+          list: this.strategyList,
+          pagination: this.strategyPagination,
+        };
+      } catch (error) {
+        console.error("【SmartControlStore】批量查询策略列表失败:", error);
         ElMessage.error("获取策略列表失败");
         throw error;
       } finally {

@@ -11,7 +11,26 @@
     </template>
 
     <el-row :gutter="20">
-      <el-col :span="24">
+      <el-col :span="12">
+        <el-form-item label="选择学期" required>
+          <el-select
+            v-model="selectedSemester"
+            placeholder="请选择学期"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="semester in semesters"
+              :key="semester.id"
+              :label="semester.name"
+              :value="semester.id"
+            />
+          </el-select>
+          <div class="semester-hint">
+            根据选定学期的课表生成定时任务
+          </div>
+        </el-form-item>
+      </el-col>
+      <el-col :span="12">
         <el-form-item label="选择实验室" required>
           <el-select
             v-model="selectedLabs"
@@ -29,7 +48,7 @@
             />
           </el-select>
           <div class="lab-hint">
-            将根据所选实验室关联的课表，为每个课程生成对应的定时任务
+            将根据所选实验室关联的课表生成定时任务
           </div>
         </el-form-item>
       </el-col>
@@ -124,8 +143,17 @@ interface Laboratory {
   laboratoryId?: string
 }
 
+interface Semester {
+  id: number
+  name: string
+  startDate?: string
+  endDate?: string
+  totalWeeks?: number
+}
+
 interface CourseScheduleFormData {
   laboratoryId: number[]
+  semesterId: number | undefined
   cron: string
   earlyStart: number
   delayEnd: number
@@ -135,6 +163,7 @@ interface CourseScheduleFormData {
 const props = defineProps<{
   modelValue: CourseScheduleFormData
   laboratories: Laboratory[]
+  semesters: Semester[]
 }>()
 
 const emit = defineEmits<{
@@ -152,6 +181,14 @@ const selectedLabs = computed({
   get: () => formData.value.laboratoryId,
   set: (val) => {
     formData.value.laboratoryId = val
+  }
+})
+
+// 学期选择
+const selectedSemester = computed({
+  get: () => formData.value.semesterId,
+  set: (val) => {
+    formData.value.semesterId = val
   }
 })
 </script>
@@ -173,7 +210,8 @@ const selectedLabs = computed({
 .lab-hint,
 .cron-hint,
 .enable-hint,
-.time-hint {
+.time-hint,
+.semester-hint {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   margin-top: 4px;

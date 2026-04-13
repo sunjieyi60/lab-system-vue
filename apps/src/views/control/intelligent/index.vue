@@ -39,6 +39,7 @@
         <CourseScheduleTaskForm
           v-if="courseScheduleDialogVisible"
           :laboratories="availableLaboratories"
+          :semesters="availableSemesters"
           :loading="courseScheduleLoading"
           @submit="handleCourseScheduleSubmit"
           @cancel="handleCourseScheduleCancel"
@@ -158,7 +159,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import { useUserStore } from "@/stores/modules/user.js";
-import { useSmartControlStore } from "@/stores/smartControl";
+import { useSmartControlStore } from "@/stores/modules/smartControl.js";
 import { useDeviceStore } from "@/stores/modules/device.js";
 import { useEduStore } from "@/stores/modules/edu.js";
 // 不再直接导入API，使用store方法
@@ -316,7 +317,7 @@ const mappedTableData = computed(() => {
   });
 });
 
-// 计算属性：表格数据（带筛选和分页）- 使用新的filter实现
+// 计算属性：表格数据（带筛选和前端分页）
 const tableData = computed(() => {
   let data = [...mappedTableData.value];
 
@@ -337,8 +338,13 @@ const tableData = computed(() => {
     });
   }
 
-  total.value = pagination.value.total || data.length;
-  return data;
+  // 更新总条数（筛选后的）
+  total.value = data.length;
+
+  // 前端分页切片
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return data.slice(start, end);
 });
 
 // 启用的策略数量
@@ -351,16 +357,11 @@ const handleSelectionChange = (selection) => {
   selectedRows.value = selection;
 };
 
-// 加载策略数据
+// 加载策略数据（使用批量查询接口）
 const loadStrategyData = async () => {
-  const params = {
-    current: currentPage.value,
-    size: pageSize.value,
-  };
-  if (laboratoryList.value.length > 0) {
-    params.laboratoryId = laboratoryList.value[0].id;
-  }
-  await smartControlStore.fetchStrategyListByLab(params);
+  // 获取当前用户所有的实验室ID列表
+  const labIds = laboratoryList.value.map((lab) => lab.id);
+  await smartControlStore.fetchStrategyListByLabBatch(labIds);
 };
 
 // 添加
@@ -514,17 +515,17 @@ const handleSearch = () => {
   currentPage.value = 1;
 };
 
-// 分页大小变化
+// 分页大小变化（前端分页，不重新请求）
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
-  loadStrategyData();
+  // 新接口返回所有数据，前端分页即可，无需重新请求
 };
 
-// 页码变化
+// 页码变化（前端分页，不重新请求）
 const handleCurrentChange = (val) => {
   currentPage.value = val;
-  loadStrategyData();
+  // 新接口返回所有数据，前端分页即可，无需重新请求
 };
 
 onMounted(async () => {

@@ -9,6 +9,7 @@
       <CourseScheduleCard
         v-model="formData"
         :laboratories="laboratories"
+        :semesters="semesters"
       />
 
       <!-- 操作按钮 -->
@@ -34,8 +35,17 @@ interface Laboratory {
   laboratoryId?: string
 }
 
+interface Semester {
+  id: number
+  name: string
+  startDate?: string
+  endDate?: string
+  totalWeeks?: number
+}
+
 interface CourseScheduleFormData {
   laboratoryId: number[]
+  semesterId: number | undefined
   cron: string
   earlyStart: number
   delayEnd: number
@@ -47,6 +57,7 @@ interface CourseScheduleFormData {
 // ============================================
 defineProps<{
   laboratories: Laboratory[]
+  semesters: Semester[]
   loading?: boolean
 }>()
 
@@ -62,6 +73,7 @@ const emit = defineEmits<{
 // 默认表单数据
 const defaultFormData: CourseScheduleFormData = {
   laboratoryId: [],
+  semesterId: undefined,
   cron: '0 0/5 * * * ?',
   earlyStart: 7,
   delayEnd: 7,
@@ -75,6 +87,10 @@ const formData = reactive<CourseScheduleFormData>({ ...defaultFormData })
 // ============================================
 function validate(): { valid: boolean; errors: string[] } {
   const errors: string[] = []
+
+  if (!formData.semesterId) {
+    errors.push('请选择学期')
+  }
 
   if (!formData.laboratoryId || formData.laboratoryId.length === 0) {
     errors.push('请至少选择一个实验室')

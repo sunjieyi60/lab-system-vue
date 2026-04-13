@@ -18,6 +18,18 @@ export function getQuartzListByLab(params = {}) {
   });
 }
 
+// 批量按实验室查询任务（支持多实验室ID列表）
+export function getQuartzListByLabBatch(laboratoryIds = []) {
+  return service({
+    url: "/quartz/list-by-lab/batch",
+    method: "get",
+    params: { laboratoryIds },
+    paramsSerializer: {
+      indexes: null, // 防止 axios 添加 [] 到参数名
+    },
+  });
+}
+
 // 创建定时任务策略
 export function createQuartz(data) {
   return service({

@@ -461,6 +461,7 @@ function handleBatchDelete() {
 
 // 方法 - 设备表单提交
 async function handleDeviceSubmit(data) {
+  console.log('data',data)
   try {
     if (formMode.value === 'create') {
       const createData = {
@@ -482,7 +483,7 @@ async function handleDeviceSubmit(data) {
       await createDevice(createData)
       ElMessage.success('创建设备成功')
     } else {
-      const updateData = { deviceId: data.id }
+      const updateData = { deviceId: data.deviceId }
       if (data.deviceName) {
         updateData.deviceName = data.deviceName
       }

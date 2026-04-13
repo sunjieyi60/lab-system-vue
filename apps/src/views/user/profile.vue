@@ -46,12 +46,12 @@
         header-align="center"
         align="center"
       />
-      <el-table-column
+      <!-- <el-table-column
         prop="username"
         label="账号"
         header-align="center"
         align="center"
-      />
+      /> -->
       <el-table-column
         prop="realName"
         label="姓名"

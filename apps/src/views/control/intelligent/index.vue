@@ -92,34 +92,27 @@
           v-loading="smartControlStore.loading"
           :data="tableData"
           style="width: 100%"
-          :header-cell-style="{
-            background: '#fafafa',
-            color: '#606266',
-            fontWeight: 'bold',
-            height: '48px',
-          }"
-          :row-style="{ height: '56px' }"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column prop="strategyType" label="策略类型" align="center" width="120">
+          <el-table-column prop="strategyType" label="策略类型" align="center" width="120" show-overflow-tooltip>
             <template #default="{ row }">
-              <span>{{ row.strategyType }}</span>
+              <span class="cell-ellipsis">{{ row.strategyType }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="strategyName" label="策略名称" align="center" min-width="150" />
-          <el-table-column prop="labNo" label="实验室编号" align="center" width="120">
+          <el-table-column prop="strategyName" label="策略名称" align="center" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="labNo" label="实验室编号" align="center" width="120" show-overflow-tooltip>
             <template #default="{ row }">
-              {{ getLabNo(row.labId) }}
+              <span class="cell-ellipsis">{{ getLabNo(row.labId) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="frequency" label="执行频率" align="center" width="120">
+          <el-table-column prop="frequency" label="执行频率" align="center" width="120" show-overflow-tooltip>
             <template #default="{ row }">
-              {{ row.frequency }}
+              <span class="cell-ellipsis">{{ row.frequency }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="startDate" label="起始时间" align="center" width="120" />
-          <el-table-column prop="endDate" label="截至时间" align="center" width="120" />
+          <el-table-column prop="startDate" label="起始时间" align="center" width="120" show-overflow-tooltip />
+          <el-table-column prop="endDate" label="截至时间" align="center" width="120" show-overflow-tooltip />
           <el-table-column prop="status" label="状态" align="center" width="100">
             <template #default="{ row }">
               <el-switch
@@ -139,7 +132,7 @@
       </div>
 
       <!-- 分页 -->
-      <div class="pagination-box">
+      <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -543,6 +536,7 @@ onUnmounted(() => {
 
 <style scoped>
 .intelligent-control-page {
+  height:100%;
   padding: 16px;
   background: #f5f7fa;
   overflow-y: auto;
@@ -552,6 +546,7 @@ onUnmounted(() => {
 .main-content {
   display: flex;
   flex-direction: column;
+  height: 100%;
   gap: 16px;
 }
 
@@ -627,18 +622,20 @@ onUnmounted(() => {
   border-radius: 4px;
   border: 1px solid #e8e8e8;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
 /* 分页 */
-.pagination-box {
+.pagination-wrapper {
   background: #fff;
   border-radius: 4px;
   border: 1px solid #e8e8e8;
   padding: 12px 20px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 :deep(.el-button:focus) {

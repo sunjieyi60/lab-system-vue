@@ -632,7 +632,7 @@ function handleCardClick(ev) {
 .corner-cell {
   width: 120px;
   box-sizing: border-box;
-  /* border-right: 1px solid #c3d9ff; */
+  border-right: 1px solid #c3d9ff;
   border-left: 1px solid #c3d9ff;
 }
 /* 表格第一行 时间行 的样式 */

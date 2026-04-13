@@ -76,25 +76,28 @@ body,
 /* 全局 Element Plus 对话框样式 - 作用于所有 <el-dialog> */
 /* 对话框容器（最外层） */
 .el-dialog {
-  --el-dialog-margin-top: 5vh;
-  background: linear-gradient(180deg, rgba(239, 253, 252, 0) 0%, #F0FDFE 14.42%, #FEFFFF 45.19%), 
-              linear-gradient(180deg, #DDF4FF 0%, #F1FFFC 18.27%, #F0FFFC 35.1%, #FFFFFF 100%);
+  background: linear-gradient(180deg, rgba(239, 253, 252, 0) 0%, #F0FDFE 14.42%, #FEFFFF 45.19%),
+    linear-gradient(180deg, #DDF4FF 0%, #F1FFFC 18.27%, #F0FFFC 35.1%, #FFFFFF 100%);
   z-index: 10;
   max-width: 60rem;
 }
 
+
 /* 添加（联动）策略弹窗特殊宽度 */
 .add-strategy-dialog {
-  height: 99vh;              /* 固定高度：视口高度的80% */
+  height: 99vh;
+  /* 固定高度：视口高度的80% */
   display: flex;
   flex-direction: column;
-  margin-top: 15vh ;  /* 上下居中 */
-  width: 660px ;
+  /* margin-top: 15vh; */
+  /* 上下居中 */
+  width: 660px;
   left: calc(50% - 330px) !important;
 }
-.linkage-strategy-dialog{
-  width: 660px ;
-  top:0vh;
+
+.linkage-strategy-dialog {
+  width: 660px;
+  top: 0vh;
   left: calc(50% - 330px) !important;
   max-width: 95vw !important;
 }
@@ -150,6 +153,13 @@ body,
   /* 垂直居中，补充原有样式 */
 }
 
+/* 表头文字不换行，超出显示省略号（保留图标在同一行） */
+.el-table thead th.el-table__cell .cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 表格行样式（原组件内的row-style） */
 .el-table tbody tr.el-table__row {
   height: 56px !important;
@@ -181,6 +191,16 @@ body,
 
 .el-table__row:last-child .el-table__cell {
   border-bottom: none !important;
+}
+
+/* 单元格文字省略（配合 show-overflow-tooltip 使用） */
+.cell-ellipsis {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 
 /* 所有el-pagination 分页器 通用样式 */
@@ -219,11 +239,35 @@ body,
 
 /* 导入课表弹窗样式 */
 .custom-import-container {
-  left: calc(50% - 700px/2);
-  width:560px !important;
+  /* left: calc(50% - 700px/2); */
+  width: 560px !important;
 }
 
 /* 隐藏非输入元素的光标，防止点击时出现不必要的文本光标 */
-div, label, h1, h2, h3, h4, h5, h6, span, p, button, a, li, ul, ol, table, th, td, tr, header, footer, nav, section, article, aside, main {
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+p,
+button,
+a,
+li,
+ul,
+ol,
+table,
+th,
+td,
+tr,
+header,
+footer,
+nav,
+section,
+article,
+aside,
+main {
   caret-color: transparent;
 }

@@ -224,7 +224,7 @@ const fetchAllCourses = async () => {
     }
   } catch (error) {
     console.error("[课表] 获取课表数据失败:", error);
-    ElMessage.error("获取课表数据失败");
+    ElMessage.error(error.response?.data?.msg || "获取课表数据失败");
     courseData.value = {};
   }
 };
@@ -240,7 +240,7 @@ const fetchLaboratoryList = async () => {
     }
   } catch (error) {
     console.error("[课表] 获取实验室列表失败:", error);
-    ElMessage.error("获取实验室列表失败");
+    ElMessage.error(error.response?.data?.msg || "获取实验室列表失败");
     laboratoryList.value = [];
   }
 };

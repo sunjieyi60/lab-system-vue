@@ -30,16 +30,14 @@
             style="width: 100%"
             v-loading="deviceStore.loading"
             @selection-change="handleSelectionChange"
-            :header-cell-style="{ background: '#f5f7fa', color: '#606266', fontWeight: '500', height: '48px' }"
-            :row-style="{ height: '48px' }"
             >
                 <el-table-column type="selection" width="50" align="center" />
                 <el-table-column prop="unit" label="单位" min-width="140" show-overflow-tooltip align="center" />
                 <el-table-column prop="building" label="楼栋" width="70" align="center" />
-                <el-table-column prop="labCode" label="实验室编号" width="100" align="center" />
-                <el-table-column prop="deviceType" label="设备类型" width="80" align="center">
+                <el-table-column prop="labCode" label="实验室编号" width="100" show-overflow-tooltip align="center" />
+                <el-table-column prop="deviceType" label="设备类型" width="80" show-overflow-tooltip align="center">
                     <template #default="{ row }">
-                    {{ getDeviceTypeName(row.deviceType) }}
+                    <span class="cell-ellipsis">{{ getDeviceTypeName(row.deviceType) }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="deviceName" label="设备名称" min-width="120" show-overflow-tooltip align="center" />
@@ -57,19 +55,19 @@
                 </el-table-column>
                 <el-table-column prop="address" label="设备地址" width="80" align="center">
                     <template #default="{ row }">
-                    <span v-if="row.address !== undefined && row.address !== null">{{ row.address }}</span>
+                    <span v-if="row.address !== undefined && row.address !== null" class="cell-ellipsis">{{ row.address }}</span>
                     <span v-else class="dash">—</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="selfId" label="设备编码" width="80" align="center">
                     <template #default="{ row }">
-                    <span v-if="row.selfId !== undefined && row.selfId !== null">{{ row.selfId }}</span>
+                    <span v-if="row.selfId !== undefined && row.selfId !== null" class="cell-ellipsis">{{ row.selfId }}</span>
                     <span v-else class="dash">—</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="createTime" label="创建时间" width="140" align="center">
                     <template #default="{ row }">
-                    {{ formatDateTime(row.createTime) }}
+                    <span class="cell-ellipsis">{{ formatDateTime(row.createTime) }}</span>
                     </template>
                 </el-table-column>
             </el-table>
@@ -178,7 +176,7 @@ const laboratoryList = computed(() => userStore.getLaboratoryList)
 // 状态
 const searchKeyword = ref('')
 const currentPage = ref(1)
-const pageSize = ref(8)
+const pageSize = ref(10)
 const selectedRows = ref([])
 
 // 添加类型选择
@@ -412,7 +410,7 @@ function handleDelete(row) {
     } else {
       await apiDeleteDevice(row.id)
       ElMessage.success('删除设备成功')
-      const laboratoryIds = laboratoryList.value.map(lab => lab.id).filter(id => id)
+      const laboratoryIds = baseStore.laboratories.map(lab => lab.id).filter(id => id)
       await deviceStore.fetchDevicesByLabIds(laboratoryIds)
     }
   }).catch(() => {})
@@ -451,7 +449,7 @@ function handleBatchDelete() {
     selectedRows.value = []
     ElMessage.success('批量删除成功')
     
-    const laboratoryIds = laboratoryList.value.map(lab => lab.id).filter(id => id)
+    const laboratoryIds = baseStore.laboratories.map(lab => lab.id).filter(id => id)
     await Promise.all([
       deviceStore.fetchDevicesByLabIds(laboratoryIds),
       deviceStore.fetchRS485Gateways(),
@@ -494,7 +492,7 @@ async function handleDeviceSubmit(data) {
       ElMessage.success('更新设备成功')
     }
     deviceFormVisible.value = false
-    const laboratoryIds = laboratoryList.value.map(lab => lab.id).filter(id => id)
+    const laboratoryIds = baseStore.laboratories.map(lab => lab.id).filter(id => id)
     await deviceStore.fetchDevicesByLabIds(laboratoryIds)
   } catch (error) {
     console.error('保存设备失败:', error)
@@ -538,12 +536,12 @@ onMounted(async () => {
     await baseStore.refreshLaboratories()
   }
   
-  // 从 userStore 获取实验室ID列表（用于部门和楼栋查询）
-  const labIdsFromUser = laboratoryList.value.map(lab => lab.id).filter(id => id)
+  // 从 baseStore 获取实验室ID列表
+  const labIds = baseStore.laboratories.map(lab => lab.id).filter(id => id)
   
-  // 获取设备数据（使用 userStore 的实验室ID）
+  // 获取设备数据
   await Promise.all([
-    deviceStore.fetchDevicesByLabIds(labIdsFromUser),
+    deviceStore.fetchDevicesByLabIds(labIds),
     deviceStore.fetchRS485Gateways(),
   ])
 })
@@ -557,16 +555,21 @@ onUnmounted(() => {
 
 <style scoped>
 .device-manage-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 16px;
   background: #f5f7fa;
-  overflow-y: auto;
   box-sizing: border-box;
 }
 
-.main-content{
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .toolbar {
@@ -576,6 +579,7 @@ onUnmounted(() => {
   padding: 16px 20px;
   border-radius: 4px;
   background: #fff;
+  flex-shrink: 0;
 }
 
 .left-actions {
@@ -639,16 +643,23 @@ onUnmounted(() => {
 .pagination-wrapper {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 16px;
   background: #fff;
   padding: 12px 20px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .total-text {
   color: #666;
   font-size: 13px;
+}
+
+:deep(.el-table) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 :deep(.el-pagination .el-select .el-input) {

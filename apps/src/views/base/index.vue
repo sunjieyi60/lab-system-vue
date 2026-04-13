@@ -64,15 +64,7 @@
         show-overflow-tooltip
       >
         <template #default="{ row }">
-          <el-tooltip
-            v-if="row.laboratoryName?.length > 5"
-            :content="row.laboratoryName"
-            placement="top"
-            effect="dark"
-          >
-            <span>{{ row.laboratoryName.slice(0, 5) }}...</span>
-          </el-tooltip>
-          <span v-else>{{ row.laboratoryName }}</span>
+          <span class="cell-ellipsis">{{ row.laboratoryName }}</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -82,20 +74,11 @@
         align="center"
         sortable
         :sort-method="sortByDept"
+        show-overflow-tooltip
       >
         <template #default="{ row }">
           <span v-if="!row.belongToDepts?.length">-</span>
-          <template v-else>
-            <el-tooltip
-              v-if="getDeptNamesByIds(row.belongToDepts, deptList).join('、').length > 5"
-              :content="getDeptNamesByIds(row.belongToDepts, deptList).join('、')"
-              placement="top"
-              effect="dark"
-            >
-              <span>{{ getDeptNamesByIds(row.belongToDepts, deptList).join("、").slice(0, 5) }}...</span>
-            </el-tooltip>
-            <span v-else>{{ getDeptNamesByIds(row.belongToDepts, deptList).join("、") }}</span>
-          </template>
+          <span v-else class="cell-ellipsis">{{ getDeptNamesByIds(row.belongToDepts, deptList).join("、") }}</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -221,9 +204,9 @@
       class="intro-dialog"
     >
       <div class="intro-wrapper">
-        <div class="intro-icon">
+        <!-- <div class="intro-icon">
           <el-icon><Document /></el-icon>
-        </div>
+        </div> -->
         <div class="intro-content">
           {{ currentIntro || "暂无简介" }}
         </div>
@@ -406,7 +389,7 @@ const handleDelete = async () => {
   } catch (error) {
     if (error !== "cancel") {
       console.error("删除失败:", error);
-      ElMessage.error("删除失败，请重试");
+      ElMessage.error(error.response?.data?.msg || "删除失败，请重试");
     }
   } finally {
     isLoading.value = false;

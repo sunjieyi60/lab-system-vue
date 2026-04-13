@@ -193,7 +193,7 @@ async function submit() {
     }
   } catch (error) {
     console.error("提交失败:", error);
-    ElMessage.error("操作失败");
+    ElMessage.error(error.response?.data?.msg || "操作失败");
   } finally {
     loading.value = false;
   }

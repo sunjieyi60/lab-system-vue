@@ -93,7 +93,15 @@
               <template v-if="alarmData.length > 0">
                 <div v-for="(item, index) in alarmData" :key="index" class="alarm-item">
                   <div class="alarm-time">{{ item.alarmTime }}</div>
-                  <div class="alarm-text">{{ item.content }}</div>
+                  <el-tooltip
+                    v-if="item.content && item.content.length > 40"
+                    :content="item.content"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <div class="alarm-text">{{ item.content }}</div>
+                  </el-tooltip>
+                  <div v-else class="alarm-text">{{ item.content }}</div>
                 </div>
               </template>
               <el-empty v-else description="暂无报警数据" :image-size="80" />
@@ -374,7 +382,7 @@ const loadLabData = async (semesterId) => {
     console.log("[loadLabData] 解析后数据:", overviewLabData.value);
   } catch (error) {
     console.error("[loadLabData] 获取实验室概览信息失败:", error);
-    ElMessage.error("获取实验室概览信息失败");
+    ElMessage.error(error.response?.data?.msg || "获取实验室概览信息失败");
     overviewLabData.value = [];
   } finally {
     labOverviewLoading.value = false;
@@ -444,7 +452,9 @@ const loadLabData = async (semesterId) => {
 
 .alarm-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .alarm-item {
@@ -466,6 +476,12 @@ const loadLabData = async (semesterId) => {
   font-size: 13px;
   color: #333;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
 }
 
 .pagination-wrapper {

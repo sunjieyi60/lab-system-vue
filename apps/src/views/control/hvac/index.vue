@@ -44,32 +44,25 @@
           :data="tableData"
           stripe
           style="width: 100%"
-          :header-cell-style="{
-            background: '#f5f7fa',
-            color: '#606266',
-            fontWeight: '500',
-            height: '48px',
-          }"
-          :row-style="{ height: '48px' }"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" align="center" />
-          <el-table-column prop="deptName" label="单位" align="center" min-width="140">
+          <el-table-column prop="deptName" label="单位" align="center" min-width="140" show-overflow-tooltip>
             <template #default="{ row }">
-              {{ getDeptName(row.labId) }}
+              <span class="cell-ellipsis">{{ getDeptName(row.labId) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="buildingName" label="楼栋" align="center" min-width="100">
+          <el-table-column prop="buildingName" label="楼栋" align="center" min-width="100" show-overflow-tooltip>
             <template #default="{ row }">
-              {{ getBuildingName(row.labId) }}
+              <span class="cell-ellipsis">{{ getBuildingName(row.labId) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="labNo" label="实验室编号" align="center" min-width="120">
+          <el-table-column prop="labNo" label="实验室编号" align="center" min-width="120" show-overflow-tooltip>
             <template #default="{ row }">
-              {{ getLabNo(row.labId) }}
+              <span class="cell-ellipsis">{{ getLabNo(row.labId) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="airCond" label="空调内机" align="center" min-width="120" />
+          <el-table-column prop="airCond" label="空调内机" align="center" min-width="120" show-overflow-tooltip />
           <el-table-column prop="switch" label="开关" align="center" min-width="80">
             <template #default="{ row }">
               <el-tag
@@ -80,18 +73,18 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="mode" label="模式" align="center" min-width="80" />
-          <el-table-column prop="temp" label="温度" align="center" min-width="80" />
-          <el-table-column prop="windSpeed" label="风速" align="center" min-width="80" />
-          <el-table-column prop="roomTemp" label="室温" align="center" min-width="80" />
-          <el-table-column prop="fault" label="故障" align="center" min-width="80">
+          <el-table-column prop="mode" label="模式" align="center" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="temp" label="温度" align="center" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="windSpeed" label="风速" align="center" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="roomTemp" label="室温" align="center" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="fault" label="故障" align="center" min-width="80" show-overflow-tooltip>
             <template #default="{ row }">
               <span :style="{ color: row.fault !== '无' ? '#f56c6c' : '#67c23a' }">
                 {{ row.fault }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="unit" label="机组" align="center" min-width="80" />
+          <el-table-column prop="unit" label="机组" align="center" min-width="80" show-overflow-tooltip />
           <el-table-column prop="online" label="在线" align="center" min-width="80">
             <template #default="{ row }">
               <el-tag
@@ -597,6 +590,7 @@ onUnmounted(() => {
 
 <style scoped>
 .ac-control-page {
+  height:100%;
   padding: 16px;
   background: #f5f7fa;
   overflow-y: auto;
@@ -606,6 +600,7 @@ onUnmounted(() => {
 .main-content {
   display: flex;
   flex-direction: column;
+  height: 100%;
   gap: 16px;
 }
 
@@ -668,6 +663,8 @@ onUnmounted(() => {
   background: #fff;
   border-radius: 4px;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 :deep(.el-table--striped .el-table__row--striped td.el-table__cell) {
@@ -724,11 +721,12 @@ onUnmounted(() => {
 .pagination-wrapper {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 16px;
   background: #fff;
   padding: 12px 20px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .total-text {

@@ -259,6 +259,7 @@ const submitting = ref(false)
 
 // 表单数据
 const formData = reactive({
+  deviceId: 1 as number | undefined,
   deviceType: '' as DeviceType | '',
   deviceName: '',
   belongToLaboratoryId: undefined as number | undefined,

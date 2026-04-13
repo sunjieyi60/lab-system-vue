@@ -98,20 +98,14 @@
     </div>
   </div>
   
-  <AddNode
-    v-model="showAddNode"
-    device-type="Sensor"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
+  
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore } from "@/stores/user.js";
-import { useDeviceStore, DeviceType } from "@/stores/device.js";
-import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useDeviceStore, DeviceType } from "@/stores/modules/device.js";
 
 const userStore = useUserStore();
 const deviceStore = useDeviceStore();
@@ -119,7 +113,6 @@ const deviceStore = useDeviceStore();
 const searchKey = ref("");
 const tableRef = ref();
 const isLoading = ref(false);
-const showAddNode = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
@@ -222,10 +215,6 @@ const handleRefresh = async () => {
   ElMessage.success("刷新成功");
 };
 
-const handleAdd = () => {
-  showAddNode.value = true;
-};
-
 const handleEdit = () => {
   const selection = tableRef.value?.getSelectionRows?.() || [];
   if (selection.length !== 1) {
@@ -286,13 +275,18 @@ onMounted(async () => {
   console.log("【检查】表格数据条数:", tableData.value.length);
   console.log("========================================");
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
 .env-monitor-page {
   padding: 16px;
   background: #f5f7fa;
-  min-height: calc(100vh - 120px);
+  overflow-y: auto;
   box-sizing: border-box;
 }
 

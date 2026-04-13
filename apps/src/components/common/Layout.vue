@@ -68,9 +68,7 @@ import AppHeader from "@/components/common/AppHeader.vue";
   flex-direction: column;
   height: 100%;
   /* flex: 1; */
-  overflow-y: auto; 
-  background-color: #ffffff;
-  padding: 0px 16px 0px 16px;
+  /* padding: 0px 16px 0px 16px; */
 }
 
 /* .is-active::before 的 z-index: -1 正常生效 */

@@ -1,6 +1,6 @@
 // src/stores/device.js
 import { defineStore } from "pinia";
-import { getDeviceList, getRS485GatewayList, getDeviceListByLab } from "@/api/device";
+import { getDeviceList, getRS485GatewayList, getDeviceListByLab, getDeviceListByLabs } from "@/api/device";
 import { ElMessage } from "element-plus";
 
 // 设备类型常量
@@ -474,6 +474,38 @@ export const useDeviceStore = defineStore("device", {
         }));
       } catch (error) {
         ElMessage.error("获取实验室设备列表失败");
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /* ---- 批量获取多个实验室下的所有设备（新接口 /device/list/all/batch）---- */
+    async fetchDevicesByLabIds(laboratoryIds) {
+      this.loading = true;
+      try {
+        const res = await getDeviceListByLabs(laboratoryIds);
+        const deviceList = res.data.data || [];
+        
+        // 转换为 deviceMap 格式，按实验室ID分组
+        const newDeviceMap = {};
+        deviceList.forEach(item => {
+          const labId = item.belongToLaboratoryId;
+          if (!newDeviceMap[labId]) {
+            newDeviceMap[labId] = [];
+          }
+          newDeviceMap[labId].push({
+            device: item,
+            deviceRecord: { data: {}, deviceType: item.deviceType },
+            deviceId: item.id,
+          });
+        });
+        
+        // 合并到现有数据
+        this.deviceMap = { ...this.deviceMap, ...newDeviceMap };
+        return deviceList;
+      } catch (error) {
+        ElMessage.error("获取设备列表失败");
         throw error;
       } finally {
         this.loading = false;

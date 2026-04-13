@@ -214,7 +214,7 @@ import {
 import { InfoFilled } from "@element-plus/icons-vue";
 import { useUserStore } from "@/stores";
 import * as echarts from "echarts";
-import service from "@/utils/request";
+import { getEnergyConsumption } from "@/api/analysis";
 
 const userStore = useUserStore();
 
@@ -339,11 +339,7 @@ const loadData = async () => {
       deviceIds: [],
     };
 
-    const res = await service({
-      url: "/analysis/energy-consumption",
-      method: "post",
-      data: params,
-    });
+    const res = await getEnergyConsumption(params);
 
     if (res.data?.ok) {
       const data = res.data.data || {};

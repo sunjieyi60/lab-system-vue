@@ -154,13 +154,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
-import { useUserStore } from "@/stores/user.js";
+import { useUserStore } from "@/stores/modules/user.js";
 import { useSmartControlStore } from "@/stores/smartControl";
-import { useDeviceStore } from "@/stores/device";
-import { useEduStore } from "@/stores/edu.js";
+import { useDeviceStore } from "@/stores/modules/device.js";
+import { useEduStore } from "@/stores/modules/edu.js";
 // 不再直接导入API，使用store方法
 import QuartzTaskForm from "@packages/quartz-kit/src/components/QuartzTaskForm.vue";
 import CourseScheduleTaskForm from "@packages/quartz-kit/src/components/CourseScheduleTaskForm.vue";
@@ -533,14 +533,19 @@ onMounted(async () => {
   await eduStore.initTermData();
   await loadStrategyData();
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
 .intelligent-control-page {
   padding: 16px;
-  background: #f0f2f5;
+  background: #f5f7fa;
+  overflow-y: auto;
   box-sizing: border-box;
-  min-height: 100%;
 }
 
 .main-content {

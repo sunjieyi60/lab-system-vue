@@ -27,15 +27,6 @@ export function createQuartz(data) {
   });
 }
 
-// 更新定时任务策略
-export function updateQuartz(data) {
-  return service({
-    url: "/quartz/update",
-    method: "put",
-    data,
-  });
-}
-
 // 删除定时任务
 export function deleteQuartz(taskId) {
   return service({

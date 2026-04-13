@@ -178,21 +178,15 @@
     </div>
   </el-dialog>
   
-  <AddNode
-    v-model="showAddNode"
-    device-type="CircuitBreak"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
+  
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore } from "@/stores/user.js";
-import { useDeviceStore, DeviceType } from "@/stores/device.js";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useDeviceStore, DeviceType } from "@/stores/modules/device.js";
 import { controlDevice } from "@/api/device.js";
-import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
 
 // 引入 control-kit 组件
 import CircuitBreakControl from "@packages/control-kit/src/components/controls/CircuitBreakControl.vue";
@@ -219,7 +213,6 @@ const showDeviceList = ref(false);
 
 // 弹窗显示状态
 const showRemote = ref(false);
-const showAddNode = ref(false);
 
 // 计算属性：表格数据（使用字符串拼接搜索）
 const tableData = computed(() => {
@@ -490,9 +483,7 @@ const handleBatchControlExecute = async (tasks, callback) => {
   }
 };
 
-const handleAdd = () => {
-  showAddNode.value = true;
-};
+
 
 const handleEdit = () => {
   const selection = tableRef.value?.getSelectionRows?.() || [];
@@ -554,12 +545,18 @@ onMounted(async () => {
   console.log("【检查】所有断路器数据:", deviceStore.getCircuitBreakTableData);
   console.log("========================================");
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
 .electric-control-page {
   padding: 16px;
   background: #f5f7fa;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 

@@ -172,21 +172,14 @@
     </div>
   </el-dialog>
   
-  <AddNode
-    v-model="showAddNode"
-    device-type="Light"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore } from "@/stores/user.js";
-import { useDeviceStore, DeviceType } from "@/stores/device.js";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useDeviceStore, DeviceType } from "@/stores/modules/device.js";
 import { controlDevice } from "@/api/device.js";
-import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
 
 // 引入 control-kit 组件
 import LightControl from "@packages/control-kit/src/components/controls/LightControl.vue";
@@ -544,12 +537,18 @@ onMounted(async () => {
   console.log("【检查】表格数据条数:", tableData.value.length);
   console.log("========================================");
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
 .light-control-page {
   padding: 16px;
   background: #f5f7fa;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 

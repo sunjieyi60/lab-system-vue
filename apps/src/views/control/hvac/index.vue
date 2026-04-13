@@ -121,15 +121,6 @@
     </div>
   </div>
 
-  <!-- 弹窗组件 -->
-  <LabDialog v-model="showLabDialog" />
-  <AddNode
-    v-model="showAddNode"
-    device-type="AirCondition"
-    :laboratory-list="laboratoryList"
-    @success="handleRefresh"
-  />
-  
   <!-- 远程控制弹窗 - 使用 AirConditionControl 组件 -->
   <el-dialog
     v-model="showRemote"
@@ -209,20 +200,12 @@
     </div>
   </el-dialog>
   
-  <IntelligentControl
-    v-model="showIntelligent"
-    :selected-rows="currentSelectedRows"
-    @closed="currentSelectedRows = []"
-  />
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import LabDialog from "@/components/LabDialog.vue";
-import AddNode from "@/components/AboutControl/AddNodeHvac.vue";
-import IntelligentControl from "@/components/AboutControl/IntelligentControl.vue";
-import { useUserStore } from "@/stores/user.js";
-import { useDeviceStore, DeviceType } from "@/stores/device.js";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useUserStore } from "@/stores/modules/user.js";
+import { useDeviceStore, DeviceType } from "@/stores/modules/device.js";
 import { ElMessage } from "element-plus";
 import { controlDevice } from "@/api/device.js";
 
@@ -238,10 +221,7 @@ const isLoading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
-const showLabDialog = ref(false);
-const showAddNode = ref(false);
 const showRemote = ref(false);
-const showIntelligent = ref(false);
 
 // 远程控制模式
 const controlMode = ref('simple'); // 'simple' | 'enhanced'
@@ -512,10 +492,6 @@ const handleBatchControlExecute = async (tasks, callback) => {
   }
 };
 
-const handleAddDefault = () => {
-  showAddNode.value = true;
-};
-
 const buildingList = computed(() => userStore.getBuildingList);
 const rawDeptData = computed(() => userStore.userInfo.depts || []);
 const deptList = computed(() => rawDeptData.value.map((item) => item.dept));
@@ -612,12 +588,18 @@ onMounted(async () => {
   );
   console.log("【检查】当前选中实验室:");
 });
+
+// 生命周期 - 卸载时清空数据
+onUnmounted(() => {
+  deviceStore.clear()
+})
 </script>
 
 <style scoped>
 .ac-control-page {
   padding: 16px;
   background: #f5f7fa;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 

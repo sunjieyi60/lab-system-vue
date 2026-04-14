@@ -353,6 +353,7 @@ const handleSelectionChange = (selection) => {
 // 加载策略数据（使用批量查询接口）
 const loadStrategyData = async () => {
   // 获取当前用户所有的实验室ID列表
+  smartControlStore.clear()
   const labIds = laboratoryList.value.map((lab) => lab.id);
   await smartControlStore.fetchStrategyListByLabBatch(labIds);
 };
@@ -623,7 +624,7 @@ onUnmounted(() => {
   border: 1px solid #e8e8e8;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* 分页 */

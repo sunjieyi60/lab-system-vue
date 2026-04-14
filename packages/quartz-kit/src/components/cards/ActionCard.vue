@@ -79,6 +79,7 @@
             <el-select
               v-model="action.deviceId"
               placeholder="设备"
+              @change="onDeviceChange(action)"
             >
               <el-option
                 v-for="device in getDevicesByType(action.deviceType)"
@@ -111,14 +112,30 @@
                 @click="emit('configArgs', groupIndex, actIndex, action)"
               >
                 配置参数
-                <el-tag v-if="action.args.length > 0" size="small" type="success">
+                <el-tag v-if="action.args.length > 2" size="small" type="success">
                   已配置
                 </el-tag>
               </el-button>
             </template>
+            <!-- 门禁延时设定 -->
+            <template v-else-if="action.commandLine === CommandLineValues.SET_ACCESS_DELAY">
+              <el-input-number
+                v-if="!readonly"
+                v-model="action.args[1]"
+                :min="0"
+                :max="255"
+                :step="1"
+                size="small"
+                placeholder="延时(秒)"
+                style="width: 120px"
+              />
+              <span v-else class="args-preview">
+                延时: {{ action.args[1] ?? '-' }} 秒
+              </span>
+            </template>
             <template v-else-if="action.deviceId">
               <span class="args-preview">
-                地址: {{ getDeviceAddress(action.deviceId) || '-' }}
+                参数: {{ formatArgsPreview(action.args) }}
               </span>
             </template>
           </el-col>
@@ -225,11 +242,73 @@ function onDeviceTypeChange(action: Action) {
   action.deviceId = 0
   const commands = commandOptions[action.deviceType]
   action.commandLine = commands[0]?.value || CommandLineEnum.OPEN_AIR_CONDITION_RS485
-  action.args = []
+  rebuildArgs(action)
+}
+
+function onDeviceChange(action: Action) {
+  rebuildArgs(action)
 }
 
 function onCommandChange(action: Action) {
-  action.args = []
+  rebuildArgs(action)
+}
+
+function rebuildArgs(action: Action) {
+  const device = props.devices.find(d => d.id === action.deviceId)
+  if (!device || device.address === undefined) {
+    action.args = []
+    return
+  }
+
+  const address = device.address
+  const selfId = device.selfId
+
+  // 根据指令确定基础参数
+  let baseArgs: number[]
+  switch (action.commandLine) {
+    case CommandLineEnum.OPEN_CIRCUITBREAK:
+    case CommandLineEnum.CLOSE_CIRCUITBREAK:
+    case CommandLineEnum.REQUEST_CIRCUITBREAK_DATA:
+    case CommandLineEnum.OPEN_ACCESS_ONCE:
+    case CommandLineEnum.CLOSE_ACCESS_ONCE:
+    case CommandLineEnum.REQUEST_ACCESS_DATA:
+    case CommandLineEnum.OPEN_ACCESS_PERSIST_LOCK:
+    case CommandLineEnum.OPEN_ACCESS_PERSIST_UNLOCK:
+    case CommandLineEnum.OPEN_ACCESS_PERSIST_KEEP:
+    case CommandLineEnum.CLOSE_ACCESS_PERSIST_LOCK:
+    case CommandLineEnum.CLOSE_ACCESS_PERSIST_UNLOCK:
+    case CommandLineEnum.CLOSE_ACCESS_PERSIST_KEEP:
+    case CommandLineEnum.KEEP_ACCESS_STATUS_LOCK:
+    case CommandLineEnum.KEEP_ACCESS_STATUS_UNLOCK:
+      baseArgs = [address]
+      break
+    default:
+      baseArgs = selfId !== undefined ? [address, selfId] : [address]
+      break
+  }
+
+  // 特殊指令保留额外的操作参数
+  if (action.commandLine === CommandLineEnum.ENHANCE_CONTROL_AIR_CONDITION) {
+    if (action.args.length >= baseArgs.length + 4) {
+      action.args = [
+        ...baseArgs,
+        action.args[baseArgs.length],
+        action.args[baseArgs.length + 1],
+        action.args[baseArgs.length + 2],
+        action.args[baseArgs.length + 3],
+      ]
+    } else {
+      action.args = [...baseArgs]
+    }
+  } else if (action.commandLine === CommandLineValues.SET_ACCESS_DELAY) {
+    if (action.args.length >= baseArgs.length + 1) {
+      action.args = [...baseArgs, action.args[baseArgs.length]]
+    } else {
+      action.args = [...baseArgs, 5]
+    }
+  } else {
+    action.args = baseArgs
+  }
 }
 
 function getDevicesByType(type?: DeviceType): Device[] {
@@ -242,8 +321,9 @@ function getCommandsByType(type?: DeviceType) {
   return commandOptions[type] || []
 }
 
-function getDeviceAddress(deviceId: number): number | undefined {
-  return props.devices.find(d => d.id === deviceId)?.address
+function formatArgsPreview(args: number[]): string {
+  if (args.length === 0) return '-'
+  return args.join(', ')
 }
 </script>
 

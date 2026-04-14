@@ -297,7 +297,7 @@ export interface AirConditionArgs {
   address: number;
   selfId: number;
   power: 0 | 1;        // 0=关, 1=开
-  mode: 0 | 1 | 2 | 3 | 4; // 0=制冷, 1=制热, 2=除湿, 3=送风, 4=自动
+  mode: 1 | 2 | 4 | 8; // 1=制热, 2=制冷, 4=送风, 8=除湿
   temperature: number; // 16-30
   fanSpeed: 0 | 1 | 2 | 3; // 0=自动, 1=低, 2=中, 3=高
 }

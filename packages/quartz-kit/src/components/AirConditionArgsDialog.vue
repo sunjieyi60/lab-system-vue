@@ -20,11 +20,10 @@
       </el-form-item>
       <el-form-item label="模式">
         <el-select v-model="formData.mode">
-          <el-option label="制冷" :value="0" />
           <el-option label="制热" :value="1" />
-          <el-option label="除湿" :value="2" />
-          <el-option label="送风" :value="3" />
-          <el-option label="自动" :value="4" />
+          <el-option label="制冷" :value="2" />
+          <el-option label="送风" :value="4" />
+          <el-option label="除湿" :value="8" />
         </el-select>
       </el-form-item>
       <el-form-item label="温度">
@@ -69,7 +68,7 @@ const formData = reactive<AirConditionArgs>({
   address: 1,
   selfId: 1,
   power: 1,
-  mode: 4,
+  mode: 2,
   temperature: 24,
   fanSpeed: 0,
 })
@@ -82,7 +81,7 @@ watch(visible, (isOpen) => {
       formData.address = props.initialArgs[0] || props.defaultAddress || 1
       formData.selfId = props.initialArgs[1] || props.defaultSelfId || 1
       formData.power = (props.initialArgs[2] as 0 | 1) || 1
-      formData.mode = (props.initialArgs[3] as 0 | 1 | 2 | 3 | 4) || 4
+      formData.mode = (props.initialArgs[3] as 1 | 2 | 4 | 8) || 2
       formData.temperature = props.initialArgs[4] || 24
       formData.fanSpeed = (props.initialArgs[5] as 0 | 1 | 2 | 3) || 0
     } else {
@@ -90,7 +89,7 @@ watch(visible, (isOpen) => {
       formData.address = props.defaultAddress || 1
       formData.selfId = props.defaultSelfId || 1
       formData.power = 1
-      formData.mode = 4
+      formData.mode = 2
       formData.temperature = 24
       formData.fanSpeed = 0
     }

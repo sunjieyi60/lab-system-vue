@@ -74,8 +74,8 @@
     @delete="handleScheduleDelete" />
 
   <!-- 导入课表弹窗 -->
-  <ImportScheduleDialog v-model="importDialogVisible" top="30vh" :semester-id="currentSemesterId"
-    :laboratory-id="currentLaboratoryId" :laboratory-list="laboratoryList" @success="handleImportSuccess" />
+  <ImportScheduleDialog v-model="importDialogVisible" :semester-id="currentSemesterId"
+    :laboratory-id="currentLaboratoryId" @success="handleImportSuccess" />
 </template>
 
 <script setup>

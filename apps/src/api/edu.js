@@ -134,4 +134,16 @@ export function deleteCourseSchedule(courseScheduleId) {
   });
 }
 
+/**
+ * 导入课表（Excel）
+ * @param {FormData} formData - multipart/form-data，包含 excel、semesterId、laboratoryId
+ */
+export function importCourseSchedule(formData) {
+  return service.post("/academic/import", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+}
+
 /* 关于 */

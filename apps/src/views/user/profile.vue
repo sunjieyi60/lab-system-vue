@@ -13,7 +13,7 @@
       <el-button :loading="isLoading" @click="handleEdit">修改</el-button>
       <el-button :loading="isLoading" @click="handleDelete">删除</el-button>
       <el-input
-        style="width: 200px; margin-left: 20px"
+        style="width: 200px;"
         v-model="searchKey"
         placeholder="请输入关键字"
         clearable
@@ -28,7 +28,8 @@
     </div>
 
     <!-- 数据表格 -->
-    <el-table
+    <div class="table-box">
+      <el-table
       ref="tableRef"
       :data="filteredTableData"
       stripe
@@ -57,20 +58,24 @@
         label="姓名"
         header-align="center"
         align="center"
+        min-width="80"
       />
       <el-table-column
         prop="phone"
         label="手机号码"
         header-align="center"
         align="center"
+        min-width="120"
       />
       <el-table-column
         prop="email"
         label="邮箱"
         header-align="center"
         align="center"
+        min-width="140"
       />
     </el-table>
+    </div>
 
     <!-- 分页 -->
     <div class="pagination-wrapper">
@@ -301,5 +306,14 @@ const handleDelete = async () => {
 .page-header :deep(.el-button:focus) {
   outline: none;
   box-shadow: none;
+}
+@media (max-width: 768px) {
+  .account-center-page {
+    padding: 8px;
+    height: auto;
+  }
+  .page-header {
+    flex-wrap: wrap;
+  }
 }
 </style>

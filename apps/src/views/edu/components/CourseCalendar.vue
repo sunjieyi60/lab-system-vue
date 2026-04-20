@@ -784,4 +784,11 @@ function handleCardClick(ev) {
 .event-card:hover {
   filter: brightness(1.1);
 }
+
+/* ==================== 移动端适配 ==================== */
+@media (max-width: 768px) {
+  .course-calendar-custom {
+    min-width: 700px;
+  }
+}
 </style>

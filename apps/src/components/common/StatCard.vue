@@ -256,4 +256,34 @@ function renderCharts() {
   flex: 1;
   min-height: 200px;
 }
+
+@media (max-width: 768px) {
+  .stat-row {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .total-section {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding-right: 0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+  .charts-section {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 16px;
+    padding-left: 0;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chart-item {
+    flex: 0 0 280px;
+    min-width: 280px;
+  }
+  .chart-container {
+    min-height: 180px;
+  }
+}
 </style>

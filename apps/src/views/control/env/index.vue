@@ -33,7 +33,7 @@
       </div>
 
       <!-- 表格 -->
-      <div class="table-box">
+      <div class="table-box" v-loading="isLoading" element-loading-text="加载中...">
         <el-table
           ref="tableRef"
           :data="tableData"
@@ -77,7 +77,6 @@
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
-        <span class="total-text">共{{ tableData.length }}条</span>
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -280,7 +279,7 @@ onUnmounted(() => {
 .env-monitor-page {
   height:100%;
   padding: 16px;
-  background: #f5f7fa;
+  background: #fff;
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -289,6 +288,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  gap: 16px;
 }
 
 /* ---------------- 工具栏 ---------------- */
@@ -297,7 +297,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  padding: 16px 20px;
+  /* padding: 16px 20px; */
   border-radius: 4px;
 }
 
@@ -372,11 +372,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.total-text {
-  font-size: 14px;
-  color: #606266;
-}
-
 :deep(.el-pagination .el-input__wrapper) {
   box-shadow: 0 0 0 1px #dcdfe6 inset;
 }
@@ -402,5 +397,57 @@ onUnmounted(() => {
   background-color: #409eff;
   color: #fff;
   border-color: #409eff;
+}
+@media (max-width: 768px) {
+  .env-monitor-page {
+    padding: 8px;
+    height: auto;
+  }
+  .main-content {
+    gap: 8px;
+  }
+  .toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    gap: 8px;
+    background: transparent;
+  }
+  .left-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .left-actions :deep(.el-button) {
+    flex-shrink: 0;
+  }
+  .right-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .search-input {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+  }
+  .statistics {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .table-box {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 60vh;
+  }
+  .pagination-wrapper {
+    padding: 8px;
+    gap: 8px;
+  }
 }
 </style>

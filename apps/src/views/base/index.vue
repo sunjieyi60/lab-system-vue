@@ -28,7 +28,8 @@
     </div>
 
     <!-- 数据表格 -->
-    <el-table
+    <div class="table-box">
+      <el-table
       ref="tableRef"
       :data="paginatedTableData"
       stripe
@@ -43,21 +44,21 @@
     >
       <el-table-column
         type="selection"
-        min-width="5"
+        min-width="55"
         header-align="center"
         align="center"
       />
       <el-table-column
         prop="laboratoryId"
         label="实验室编号"
-        min-width="15"
+        min-width="100"
         align="center"
         sortable
       />
       <el-table-column
         prop="laboratoryName"
         label="实验室名称"
-        min-width="20"
+        min-width="120"
         header-align="center"
         align="center"
         sortable
@@ -69,7 +70,7 @@
       </el-table-column>
       <el-table-column
         label="单位"
-        min-width="20"
+        min-width="120"
         header-align="center"
         align="center"
         sortable
@@ -83,7 +84,7 @@
       </el-table-column>
       <el-table-column
         label="楼栋"
-        min-width="15"
+        min-width="80"
         header-align="center"
         align="center"
         sortable
@@ -95,7 +96,7 @@
       </el-table-column>
       <el-table-column
         label="负责人"
-        min-width="10"
+        min-width="80"
         header-align="center"
         align="center"
         sortable
@@ -128,7 +129,7 @@
       </el-table-column>
       <el-table-column
         label="联系方式"
-        min-width="15"
+        min-width="110"
         header-align="center"
         align="center"
         sortable
@@ -162,7 +163,7 @@
       <el-table-column
         prop="securityLevel"
         label="安全等级"
-        min-width="15"
+        min-width="110"
         header-align="center"
         align="center"
         sortable
@@ -170,7 +171,7 @@
       <el-table-column
         prop="classCapacity"
         label="容量"
-        min-width="10"
+        min-width="100"
         header-align="center"
         align="center"
         sortable
@@ -178,7 +179,7 @@
       <el-table-column
         prop="area"
         label="面积"
-        min-width="10"
+        min-width="100"
         header-align="center"
         align="center"
         sortable
@@ -186,7 +187,7 @@
       <!-- 实验室简介 -->
       <el-table-column
         label="简介"
-        min-width="10"
+        min-width="100"
         header-align="center"
         align="center"
       >
@@ -195,6 +196,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <!-- 简介弹窗 -->
     <el-dialog
@@ -543,5 +545,14 @@ const handleDelete = async () => {
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e7eb;
+}
+@media (max-width: 768px) {
+  .lab-management-page {
+    padding: 8px;
+    height: auto;
+  }
+  .page-header {
+    flex-wrap: wrap;
+  }
 }
 </style>

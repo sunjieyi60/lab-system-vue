@@ -314,4 +314,31 @@ onMounted(async () => {
 .tip.error {
   color: #f56c6c;
 }
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 8px;
+    background: #fff;
+  }
+  .filter-card {
+    margin-bottom: 12px;
+  }
+  .filter-section {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-item {
+    flex-shrink: 0;
+  }
+  .filter-item .el-select {
+    width: 140px;
+  }
+  .query-btn {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+}
 </style>

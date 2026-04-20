@@ -2,6 +2,10 @@
   <div class="global-header">
     <!-- 左侧系统名称与Logo -->
     <div class="header-left">
+      <!-- 移动端菜单切换按钮 -->
+      <el-button class="menu-toggle" text @click="toggleMobileMenu">
+        <el-icon :size="24"><Menu /></el-icon>
+      </el-button>
       <img src="/images/学校.png" alt="学校 logo" class="logo" />
       <span class="system-title">实验室综合管理系统</span>
     </div>
@@ -22,13 +26,16 @@
 </template>
 
 <script setup>
+import { inject } from "vue";
 import { useUserStore } from "@/stores";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { UserFilled } from "@element-plus/icons-vue";
+import { UserFilled, Menu } from "@element-plus/icons-vue";
 
 const userStore = useUserStore();
 const router = useRouter();
+
+const { toggleMobileMenu } = inject("mobileMenu");
 
 const handleCommand = (command) => {
   switch (command) {
@@ -67,6 +74,12 @@ const handleCommand = (command) => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.menu-toggle {
+  display: none;
+  padding: 4px;
+  color: #1f2937;
 }
 
 .logo {
@@ -114,13 +127,21 @@ const handleCommand = (command) => {
     height: 56px;
     padding: 0 16px;
   }
-  
-  .system-title {
-    font-size: 16px;
+
+  .menu-toggle {
+    display: inline-flex;
   }
-  
+
+  .system-title {
+    font-size: 15px;
+  }
+
   .welcome-text {
     display: none;
+  }
+
+  .logo {
+    height: 32px;
   }
 }
 </style>

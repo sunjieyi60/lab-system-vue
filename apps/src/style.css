@@ -271,3 +271,163 @@ aside,
 main {
   caret-color: transparent;
 }
+
+/* ==================== 全局移动端适配补丁 ==================== */
+@media (max-width: 768px) {
+
+  /* 弹窗全宽适配 */
+  .el-dialog {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 10px auto !important;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .el-dialog .el-dialog__body {
+    max-height: calc(90vh - 120px);
+    overflow-y: auto;
+    padding: 10px 12px 0;
+  }
+
+  .add-strategy-dialog,
+  .linkage-strategy-dialog,
+  .add-user-dialog,
+  .custom-import-container {
+    width: 95vw !important;
+    left: 2.5vw !important;
+    height: auto;
+    max-height: 90vh;
+  }
+
+  /* 表格横向滚动 */
+  .table-box {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-box .el-table {
+    width: auto;
+  }
+
+  /* 分页器换行居中 */
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+  }
+
+  /* 分页器布局：第一行放 prev/pager/next，第二行放 total/sizes/jumper */
+  .el-pagination .btn-prev,
+  .el-pagination .el-pager,
+  .el-pagination .btn-next {
+    order: 1;
+  }
+
+  .el-pagination::after {
+    content: '';
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .el-pagination .el-pagination__total,
+  .el-pagination .el-pagination__sizes,
+  .el-pagination .el-pagination__jump {
+    order: 3;
+  }
+
+  /* 减少页码显示数量 */
+  .el-pager li.number:nth-child(n+6):not(:last-child) {
+    display: none;
+  }
+
+  /* 输入框、选择器默认撑满 */
+  .el-input,
+  .el-select {
+    width: 100%;
+  }
+
+  /* 统计区域适配 */
+  .statistics {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* 全局卡片内边距缩减 */
+  .el-card {
+    --el-card-padding: 12px;
+  }
+
+  /* 表格行高适当缩小 */
+  .el-table tbody tr.el-table__row {
+    height: 48px !important;
+  }
+
+  /* 表格单元格不换行，超出省略 */
+  .el-table .cell {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 分页器内元素缩小间距 */
+  .el-pagination>* {
+    gap: 4px;
+  }
+
+  /* 搜索输入框移动端撑满 */
+  .search-input,
+  .search-input.el-input,
+  .search-input .el-input {
+    width: 100%;
+  }
+
+  /* 分页栏移动端适配 */
+  .pagination-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    background-color: #ffffff;
+    justify-content: center;
+  }
+
+  /* 页面头部操作区移动端适配 */
+  .page-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* 右侧操作区移动端撑满 */
+  .right-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  /* 内容区域 padding 缩减 */
+  .main-content {
+    padding: 0 8px 8px;
+  }
+
+  /* 页面根容器撑满高度，让分页器置底 */
+  .main-content>div[class*="-page"],
+  .main-content>.dashboard,
+  .main-content>.book-container,
+  .main-content>.asset-container {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 100px);
+  }
+
+  /* 控制中心页面根容器适配 */
+  .door-control-page,
+  .electric-control-page,
+  .ac-control-page,
+  .light-control-page,
+  .intelligent-control-page,
+  .env-monitor-page,
+  .device-manage-page {
+    padding: 8px;
+    height: auto;
+  }
+}

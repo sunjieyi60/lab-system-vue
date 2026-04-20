@@ -79,7 +79,8 @@
     </div>
 
     <!-- 数据表格 -->
-    <el-table
+    <div class="table-box" v-loading="isLoading" element-loading-text="加载中...">
+      <el-table
       ref="tableRef"
       :data="tableData"
       stripe
@@ -129,6 +130,7 @@
         min-width="100"
       />
     </el-table>
+    </div>
 
     <!-- 分页 -->
     <div class="pagination-wrapper">
@@ -355,5 +357,24 @@ onMounted(() => {
 
 :deep(.el-button--primary) {
   margin-left: 8px;
+}
+@media (max-width: 768px) {
+  .log-query-page {
+    padding: 8px;
+    height: auto;
+  }
+  .search-area {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 8px;
+  }
+  .search-area > * {
+    flex-shrink: 0;
+  }
+  .search-label {
+    white-space: nowrap;
+  }
 }
 </style>

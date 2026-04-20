@@ -75,9 +75,6 @@
           </el-select>
         </div>
 
-        <el-button type="primary" :loading="loading" @click="loadData">
-          查询
-        </el-button>
       </div>
 
       <!-- 显示方式切换 -->
@@ -86,6 +83,9 @@
           <el-radio-button label="list">列表显示</el-radio-button>
           <el-radio-button label="chart">饼图显示</el-radio-button>
         </el-radio-group>
+        <el-button type="primary" :loading="loading" @click="loadData">
+          查询
+        </el-button>
       </div>
     </el-card>
 
@@ -100,31 +100,29 @@
                 <el-icon class="summary-icon"><Info-Filled /></el-icon>
                 <span>运行总结</span>
               </div>
-              <div v-if="summaryRow" class="summary-content">
-                <span class="summary-item">
-                  <span class="summary-label">时间范围:</span>
-                  <span class="summary-value">{{ summaryRow.timeRange }}</span>
-                </span>
-                <span class="summary-item">
-                  <span class="summary-label">实验室:</span>
-                  <span class="summary-value">{{ summaryRow.laboratoryNos }}</span>
-                </span>
-                <span class="summary-item">
-                  <span class="summary-label">单位:</span>
-                  <span class="summary-value">{{ summaryRow.deptName }}</span>
-                </span>
-                <span class="summary-item">
-                  <span class="summary-label">设备汇总:</span>
-                  <span class="summary-value">{{ summaryRow.acUnitSummary }}</span>
-                </span>
-                <span class="summary-item highlight">
-                  <span class="summary-label">总运行时长:</span>
-                  <span class="summary-value">{{ summaryRow.totalHours }} 小时</span>
-                </span>
-                <span class="summary-item">
-                  <span class="summary-label">占比:</span>
-                  <span class="summary-value">{{ summaryRow.proportion }}</span>
-                </span>
+              <div v-if="summaryRow" class="summary-content-wrapper">
+                <div class="summary-content">
+                  <span class="summary-item">
+                    <span class="summary-label">实验室:</span>
+                    <span class="summary-value">{{ summaryRow.laboratoryNos }}</span>
+                  </span>
+                  <span class="summary-item">
+                    <span class="summary-label">单位:</span>
+                    <span class="summary-value">{{ summaryRow.deptName }}</span>
+                  </span>
+                  <span class="summary-item">
+                    <span class="summary-label">设备汇总:</span>
+                    <span class="summary-value">{{ summaryRow.acUnitSummary }}</span>
+                  </span>
+                  <span class="summary-item highlight">
+                    <span class="summary-label">总运行时长:</span>
+                    <span class="summary-value">{{ summaryRow.totalHours }} 小时</span>
+                  </span>
+                  <span class="summary-item">
+                    <span class="summary-label">占比:</span>
+                    <span class="summary-value">{{ summaryRow.proportion }}</span>
+                  </span>
+                </div>
               </div>
               <div v-else class="summary-empty">暂无数据</div>
             </div>
@@ -660,5 +658,79 @@ onBeforeUnmount(() => {
   border: 1px solid #e4e7ed;
   border-radius: 8px;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 8px;
+    background: #fff;
+  }
+  .filter-card {
+    margin-bottom: 12px;
+  }
+  .filter-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  .filter-section {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .filter-item {
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .filter-item :deep(.el-date-editor--datetimerange) {
+    width: 320px !important;
+  }
+  .display-tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .data-card {
+    overflow-x: auto;
+  }
+  .data-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+  .summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 4px;
+  }
+  .summary-content-wrapper {
+    width: 100%;
+  }
+  .summary-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+  }
+  .summary-item {
+    flex-shrink: 0;
+    justify-content: flex-start;
+  }
+  .summary-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .summary-value {
+    max-width: 20ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>

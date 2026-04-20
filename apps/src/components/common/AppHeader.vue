@@ -4,6 +4,7 @@
       mode="horizontal"
       router
       :default-active="currentRoute"
+      :ellipsis="false"
       background-color="#f5f7fa"
       text-color="#333"
       active-text-color="#0960bd"
@@ -121,5 +122,40 @@ const currentRoute = computed(() => route.path);
 /* 4. 折叠菜单按钮样式 */
 :deep(.el-sub-menu__title) {
   padding: 0 12px !important;
+}
+
+/* ==================== 移动端适配 ==================== */
+@media (max-width: 768px) {
+  .app-header {
+    height: auto;
+    padding: 8px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :deep(.el-menu--horizontal) {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: visible;
+    flex-wrap: nowrap;
+    height: auto;
+    min-height: auto;
+    border-bottom: none;
+    width: max-content;
+  }
+
+  /* 隐藏折叠菜单按钮 */
+  :deep(.el-menu--horizontal .el-sub-menu) {
+    display: none;
+  }
+
+  :deep(.el-menu-item) {
+    font-size: 14px;
+    height: 34px;
+    line-height: 34px;
+    margin-top: 0;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
 }
 </style>

@@ -186,7 +186,7 @@ const handleLabCurrentChange = (val) => {
 const getDeviceRatio = (devices, type) => {
   const d = devices?.[type];
   if (!d) return "0/0";
-  return `${d.online || 0}/${d.total || 0}`;
+  return `${d.isOpen || 0}/${d.total || 0}`;
 };
 
 const getEnvText = (env) => {

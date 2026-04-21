@@ -301,3 +301,29 @@ export interface AirConditionArgs {
   temperature: number; // 16-30
   fanSpeed: 0 | 1 | 2 | 3; // 0=自动, 1=低, 2=中, 3=高
 }
+
+// ============================================
+// 课表任务生成器
+// ============================================
+
+/** 课表任务生成器配置 */
+export interface CourseScheduleTaskGenerator {
+  /** 实验室ID列表 */
+  laboratoryId: number[];
+  /** 检查间隔（Cron表达式，默认每5分钟） */
+  cron?: string;
+  /** 提前执行时间（分钟，默认7分钟） */
+  earlyStart?: number;
+  /** 延迟结束时间（分钟，默认7分钟） */
+  delayEnd?: number;
+  /** 是否启用（默认true） */
+  enable?: boolean;
+  /** 学期ID */
+  semesterId: number;
+  /** 条件组模板（可选）- 每个生成的任务都会深度复制 */
+  conditionGroups?: ConditionGroup[];
+  /** 动作组模板（可选）- 每个生成的任务都会深度复制，conditionGroupId 自动映射 */
+  actionGroups?: ActionGroup[];
+  /** 数据源模板（可选）- 每个生成的任务都会深度复制 */
+  dataGroup?: DataSource[];
+}

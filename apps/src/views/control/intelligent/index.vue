@@ -31,7 +31,7 @@
       <el-dialog
         v-model="courseScheduleDialogVisible"
         title="从课表生成定时任务"
-        width="80%"
+        width="90%"
         top="5vh"
         :close-on-click-modal="false"
         destroy-on-close
@@ -40,6 +40,7 @@
           v-if="courseScheduleDialogVisible"
           :laboratories="availableLaboratories"
           :semesters="availableSemesters"
+          :devices="courseScheduleDevices"
           :loading="courseScheduleLoading"
           @submit="handleCourseScheduleSubmit"
           @cancel="handleCourseScheduleCancel"
@@ -183,6 +184,7 @@ const currentEditData = ref(null);
 // 课表生成对话框相关
 const courseScheduleDialogVisible = ref(false);
 const courseScheduleLoading = ref(false);
+const courseScheduleDevices = ref([]);
 
 // 当前选中的实验室ID（用于表单）
 const selectedLabId = ref(0);
@@ -369,7 +371,26 @@ const handleAdd = async () => {
 };
 
 // 从课表生成
-const handleGenerateFromCourse = () => {
+const handleGenerateFromCourse = async () => {
+  // 加载所有实验室的设备
+  const labIds = laboratoryList.value.map((lab) => lab.id);
+  if (labIds.length > 0) {
+    try {
+      const allDevices = await deviceStore.fetchDevicesByLabIds(labIds);
+      // 转换为 CourseScheduleTaskForm 需要的格式
+      courseScheduleDevices.value = allDevices.map(item => ({
+        id: item.id,
+        name: item.deviceName,
+        type: item.deviceType,
+        address: item.address,
+        selfId: item.selfId,
+        labId: item.belongToLaboratoryId,
+      }));
+    } catch (error) {
+      console.error("加载设备列表失败:", error);
+      courseScheduleDevices.value = [];
+    }
+  }
   courseScheduleDialogVisible.value = true;
 };
 

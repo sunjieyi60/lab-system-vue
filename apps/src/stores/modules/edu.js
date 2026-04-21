@@ -1,6 +1,12 @@
 import { defineStore } from "pinia";
 // 引入学期相关的 API 方法
-import { getTerm, addTerm, deleteTerm, updataTerm } from "@/api/edu";
+import {
+  getTerm,
+  addTerm,
+  deleteTerm,
+  updataTerm,
+  editCourseSchedule,
+} from "@/api/edu";
 
 export const useEduStore = defineStore("edu", {
   state: () => ({
@@ -146,6 +152,33 @@ export const useEduStore = defineStore("edu", {
     setCurrentTerm(term) {
       console.log("[EduStore][setCurrentTerm] 设置当前选中学期:", term);
       this.currentTerm = term;
+    },
+
+    // 更新课程安排
+    async modifyCourseSchedule(data) {
+      console.log(
+        "[EduStore][modifyCourseSchedule] 开始更新课程安排:",
+        data,
+      );
+      try {
+        this.loading = true;
+        this.error = null;
+        const response = await editCourseSchedule(data);
+        console.log(
+          "[EduStore][modifyCourseSchedule] 更新课程安排成功:",
+          response.data,
+        );
+        return response.data;
+      } catch (err) {
+        this.error = err.message || "更新课程安排失败";
+        console.error(
+          "[EduStore][modifyCourseSchedule] 更新课程安排失败:",
+          this.error,
+        );
+        throw err;
+      } finally {
+        this.loading = false;
+      }
     },
 
     // 清除错误信息

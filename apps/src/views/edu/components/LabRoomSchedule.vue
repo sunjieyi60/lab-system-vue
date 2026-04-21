@@ -279,7 +279,7 @@ function getCourseColor(course) {
   min-width: 1000px;
   border: 1px solid #c3d9ff;
   border-radius: 4px;
-  overflow: hidden;
+  overflow-x: scroll;
 }
 
 .schedule-table {

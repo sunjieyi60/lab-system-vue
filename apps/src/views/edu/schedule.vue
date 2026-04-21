@@ -64,7 +64,7 @@
     <!-- 排课组件 -->
     <div class="calendar-wrapper" v-loading="courseLoading" element-loading-text="加载中...">
       <CourseCalendar :courses="courseList" :selected-schedule-id="selectedScheduleId"
-        @select-schedule="handleSelectSchedule" />
+        @select-schedule="handleSelectSchedule" @edit-schedule="handleEditSchedule" />
     </div>
   </div>
 
@@ -411,6 +411,16 @@ const handleLabChange = (val) => {
   ) {
     building.value = null;
   }
+};
+
+// 双击编辑课程
+const handleEditSchedule = (courseData) => {
+  console.log("双击编辑课程:", courseData);
+  currentEditData.value = {
+    ...courseData,
+    isEdit: true,
+  };
+  scheduleDialogVisible.value = true;
 };
 
 // 点击手动排课

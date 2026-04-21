@@ -57,6 +57,7 @@
                 backgroundColor: group.mainEvent.backgroundColor || '#3b82f6',
               }"
               @click.stop="handleCardClick(group.mainEvent)"
+              @dblclick.stop="handleCardDblClick(group.mainEvent)"
             >
               <div class="event-title">{{ group.mainEvent.title }}</div>
               <!-- 第二行：教师 + 周次 -->
@@ -125,6 +126,7 @@
                   getSplitCardStyle(group.mainEvent, ev, idx, group.events.length)
                 "
                 @click.stop="handleSingleCardClick(ev)"
+                @dblclick.stop="handleCardDblClick(ev)"
               >
                 <div class="event-title">{{ ev.title }}</div>
                 <!-- 第二行：教师 + 周次 -->
@@ -219,7 +221,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["select-schedule"]); // 改为选中排课实例
+const emit = defineEmits(["select-schedule", "edit-schedule"]); // 改为选中排课实例，新增编辑事件
 
 /* -------------------- 节次配置 -------------------- */
 const sections = [
@@ -602,6 +604,13 @@ function handleCardClick(ev) {
       emit("select-schedule", ev.scheduleId);
       ElMessage.success(`已选择课程：${ev.title}`);
     }
+  }
+}
+
+// 双击卡片：触发编辑
+function handleCardDblClick(ev) {
+  if (ev.rawData) {
+    emit("edit-schedule", ev.rawData);
   }
 }
 </script>

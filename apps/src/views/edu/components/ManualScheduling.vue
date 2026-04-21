@@ -2,7 +2,7 @@
   <!-- 主弹窗：手动排课 -->
   <el-dialog
     v-model="visible"
-    title="手动排课"
+    :title="dialogTitle"
     width="480px"
     top="27vh"
     :close-on-click-modal="false"
@@ -70,6 +70,9 @@
 
     <template #footer>
       <div class="dialog-footer">
+        <el-button v-if="props.editData?.isEdit" type="danger" @click="handleDelete">
+          删除
+        </el-button>
         <el-button @click="visible = false">取消</el-button>
         <el-button type="primary" @click="submit">确定</el-button>
       </div>
@@ -192,13 +195,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from "vue";
+import { ref, reactive, watch, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   createCourse,
   createCourseSchedule,
   getTeacherList,
   createTeacher,
+  editCourseSchedule,
 } from "@/api/edu";
 
 const props = defineProps({
@@ -233,6 +237,11 @@ const formRef = ref();
 
 const loading = ref(false);
 const teacherList = ref([]);
+
+// 弹窗标题
+const dialogTitle = computed(() => {
+  return props.editData?.isEdit ? "编辑排课" : "手动排课";
+});
 
 // 主表单
 const form = reactive({
@@ -401,6 +410,72 @@ const clearTime = () => {
   form.endTime = "";
 };
 
+// 回填编辑数据
+function fillEditData(data) {
+  form.courseName = data.courseName || "";
+  form.teacherId = data.teacherId || null;
+  form.mark = data.mark || "";
+  form.weekType = data.weekType || "Both";
+  form.startWeek = data.startWeek || 1;
+  form.endWeek = data.endWeek || 16;
+  form.weekdays = data.weekdays || [];
+  form.startTime = data.startTime || "";
+  form.endTime = data.endTime || "";
+  form.startSection = data.startSection || 1;
+  form.endSection = data.endSection || 2;
+
+  // 回填时间选择弹窗的数据
+  if (data.weekType === "Single") {
+    timeForm.weekType = ["Single"];
+  } else if (data.weekType === "Double") {
+    timeForm.weekType = ["Double"];
+  } else {
+    timeForm.weekType = ["Single", "Double"];
+  }
+  timeForm.startWeek = data.startWeek || 1;
+  timeForm.endWeek = data.endWeek || 16;
+  timeForm.weekDay = data.weekdays?.[0] || null;
+
+  // 根据 startSection 和 endSection 反推 periods
+  const periods = [];
+  if (data.startSection != null && data.endSection != null) {
+    for (let i = data.startSection; i <= data.endSection; i++) {
+      periods.push(i);
+    }
+  }
+  timeForm.periods = periods;
+  timeForm.startTime = data.startTime || "";
+  timeForm.endTime = data.endTime || "";
+  timeForm.remark = data.mark || "";
+
+  // 生成 courseTime 显示字符串
+  const weekTypeText = [];
+  if (timeForm.weekType.includes("Single")) weekTypeText.push("单周");
+  if (timeForm.weekType.includes("Double")) weekTypeText.push("双周");
+
+  const weekDaysText =
+    weekDaysOptions.find((o) => o.value === timeForm.weekDay)?.label || "";
+
+  const periodsText =
+    timeForm.periods.length > 0
+      ? `第${timeForm.periods.sort((a, b) => a - b).join("、")}节`
+      : "";
+
+  const timeRangeText =
+    timeForm.startTime && timeForm.endTime
+      ? `${timeForm.startTime}-${timeForm.endTime}`
+      : "";
+
+  const parts = [];
+  if (weekTypeText.length > 0) parts.push(weekTypeText.join("、"));
+  parts.push(`第${timeForm.startWeek}-${timeForm.endWeek}周`);
+  if (weekDaysText) parts.push(weekDaysText);
+  if (periodsText) parts.push(periodsText);
+  if (timeRangeText) parts.push(timeRangeText);
+
+  form.courseTime = parts.join(" ");
+}
+
 // 获取教师列表
 const fetchTeacherList = async () => {
   try {
@@ -421,8 +496,13 @@ watch(
       // 弹窗打开时获取教师列表
       fetchTeacherList();
       if (props.editData) {
-        // 编辑模式：回填数据
-        Object.assign(form, props.editData);
+        if (props.editData.isEdit) {
+          // 编辑模式：回填完整数据
+          fillEditData(props.editData);
+        } else {
+          // 新增模式：只回填实验室信息
+          Object.assign(form, props.editData);
+        }
       }
     } else if (!val) {
       reset();
@@ -487,23 +567,6 @@ const submit = async () => {
       ElMessage.success("已自动创建新教师");
     }
 
-    // 先创建课程，获取课程ID
-    const courseRes = await createCourse({
-      courseName: form.courseName,
-      volume: 50, // 默认课容量
-    });
-
-    if (!courseRes.data?.ok) {
-      ElMessage.error(courseRes.data?.msg || "创建课程失败");
-      return;
-    }
-
-    const courseId = courseRes.data.data?.courseId;
-    if (!courseId) {
-      ElMessage.error("创建课程失败，未返回课程ID");
-      return;
-    }
-
     // 获取教师名称用于显示
     const teacherName =
       typeof form.teacherId === "string"
@@ -511,32 +574,77 @@ const submit = async () => {
         : teacherList.value.find((t) => t.id === form.teacherId)?.teacherName ||
           "";
 
-    // 构建排课数据
-    const scheduleData = {
-      semesterId: props.semesterId,
-      laboratoryId: labId,
-      weekType: form.weekType,
-      startWeek: form.startWeek,
-      endWeek: form.endWeek,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      weekdays: form.weekdays,
-      courseId: courseId,
-      teacherId: finalTeacherId, // 教师ID
-      teacherName: teacherName, // 教师名称
-      startSection: form.startSection,
-      endSection: form.endSection,
-      mark: form.mark || form.courseTime, // 备注，默认为课程时间
-    };
+    if (props.editData?.isEdit) {
+      // 编辑模式：调用 editCourseSchedule
+      const editPayload = {
+        courseScheduleId: props.editData.id,
+        courseName: form.courseName,
+        teacherId: finalTeacherId,
+        weekType: form.weekType,
+        startWeek: form.startWeek,
+        endWeek: form.endWeek,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        weekdays: form.weekdays,
+        startSection: form.startSection,
+        endSection: form.endSection,
+        mark: form.mark || form.courseTime,
+      };
 
-    const scheduleRes = await createCourseSchedule(scheduleData);
+      const res = await editCourseSchedule(editPayload);
 
-    if (scheduleRes.data?.ok) {
-      ElMessage.success("排课成功");
-      emit("success", scheduleData);
-      visible.value = false;
+      if (res.data?.ok) {
+        ElMessage.success("修改成功");
+        emit("success", editPayload);
+        visible.value = false;
+      } else {
+        ElMessage.error(res.data?.msg || "修改失败");
+      }
     } else {
-      ElMessage.error(scheduleRes.data?.msg || "排课失败");
+      // 新增模式：先创建课程，再创建排课
+      const courseRes = await createCourse({
+        courseName: form.courseName,
+        volume: 50, // 默认课容量
+      });
+
+      if (!courseRes.data?.ok) {
+        ElMessage.error(courseRes.data?.msg || "创建课程失败");
+        return;
+      }
+
+      const courseId = courseRes.data.data?.courseId;
+      if (!courseId) {
+        ElMessage.error("创建课程失败，未返回课程ID");
+        return;
+      }
+
+      // 构建排课数据
+      const scheduleData = {
+        semesterId: props.semesterId,
+        laboratoryId: labId,
+        weekType: form.weekType,
+        startWeek: form.startWeek,
+        endWeek: form.endWeek,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        weekdays: form.weekdays,
+        courseId: courseId,
+        teacherId: finalTeacherId,
+        teacherName: teacherName,
+        startSection: form.startSection,
+        endSection: form.endSection,
+        mark: form.mark || form.courseTime,
+      };
+
+      const scheduleRes = await createCourseSchedule(scheduleData);
+
+      if (scheduleRes.data?.ok) {
+        ElMessage.success("排课成功");
+        emit("success", scheduleData);
+        visible.value = false;
+      } else {
+        ElMessage.error(scheduleRes.data?.msg || "排课失败");
+      }
     }
   } catch (error) {
     console.error("提交失败:", error);

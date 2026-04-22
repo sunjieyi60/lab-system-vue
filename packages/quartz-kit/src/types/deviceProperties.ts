@@ -162,8 +162,8 @@ export const CircuitBreakProperties: PropertyDefinition[] = [
     javaType: 'Boolean', 
     description: '是否分闸',
     enumValues: [
-      { value: true, label: '已分闸' },
-      { value: false, label: '已合闸' },
+      { value: true, label: '已通电' },
+      { value: false, label: '已断电' },
     ],
   },
   { 

@@ -126,8 +126,8 @@ const DeviceTypeNameMap: Record<string, string> = {
 }
 
 function onConditionChange(condition: Condition, rule: ConditionRule) {
-  // 可以在这里添加额外的逻辑，如自动填充描述
-  if (!condition.desc && rule.property && rule.dataSourceId) {
+  // 条件变更时自动同步更新描述，避免旧的描述残留
+  if (rule.property && rule.dataSourceId) {
     condition.desc = generateAutoDesc(rule)
   }
 }

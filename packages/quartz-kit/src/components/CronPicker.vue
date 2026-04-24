@@ -473,33 +473,73 @@ const confirm = () => {
   panelVisible.value = false
 }
 
+// 解析单个 cron 字段
+const parseCronPart = (
+  part: string,
+  typeRef: any,
+  rangeStartRef: any,
+  rangeEndRef: any,
+  intervalStartRef: any,
+  intervalStepRef: any,
+  specificRef: any
+) => {
+  if (part === '*' || part === '?') {
+    typeRef.value = 'every'
+  } else if (part.includes('/')) {
+    typeRef.value = 'interval'
+    const [start, step] = part.split('/')
+    intervalStartRef.value = parseInt(start) || 0
+    intervalStepRef.value = parseInt(step) || 1
+  } else if (part.includes('-')) {
+    typeRef.value = 'range'
+    const [start, end] = part.split('-')
+    rangeStartRef.value = parseInt(start) || 0
+    rangeEndRef.value = parseInt(end) || 0
+  } else if (part.includes(',')) {
+    typeRef.value = 'specific'
+    specificRef.value = part.split(',').map((s: string) => parseInt(s))
+  } else if (part === 'L') {
+    typeRef.value = 'last'
+  } else {
+    typeRef.value = 'specific'
+    specificRef.value = [parseInt(part)]
+  }
+}
+
 // 解析 cron 表达式到配置
 const parseCronToConfig = (cron: string) => {
   const parts = cron.split(' ')
   if (parts.length !== 6) return
-  
-  const [second] = parts
-  
+
+  const [second, minute, hour, day, month, week] = parts
+
   // 解析秒
-  if (second === '*') secondType.value = 'every'
-  else if (second.includes('/')) {
-    secondType.value = 'interval'
-    const [start, step] = second.split('/')
-    secondIntervalStart.value = parseInt(start) || 0
-    secondIntervalStep.value = parseInt(step) || 5
+  parseCronPart(second, secondType, secondRangeStart, secondRangeEnd, secondIntervalStart, secondIntervalStep, secondSpecific)
+
+  // 解析分
+  parseCronPart(minute, minuteType, minuteRangeStart, minuteRangeEnd, minuteIntervalStart, minuteIntervalStep, minuteSpecific)
+
+  // 解析时
+  parseCronPart(hour, hourType, hourRangeStart, hourRangeEnd, hourIntervalStart, hourIntervalStep, hourSpecific)
+
+  // 解析日
+  parseCronPart(day, dayType, dayRangeStart, dayRangeEnd, dayIntervalStart, dayIntervalStep, daySpecific)
+
+  // 解析月
+  parseCronPart(month, monthType, monthRangeStart, monthRangeEnd, monthIntervalStart, monthIntervalStep, monthSpecific)
+
+  // 解析周
+  if (week === '?' || week === '*') {
+    weekType.value = 'every'
+  } else if (week === 'L') {
+    weekType.value = 'last'
+  } else if (week.includes(',')) {
+    weekType.value = 'specific'
+    weekSpecific.value = week.split(',').map(s => parseInt(s))
+  } else {
+    weekType.value = 'specific'
+    weekSpecific.value = [parseInt(week)]
   }
-  else if (second.includes('-')) {
-    secondType.value = 'range'
-    const [start, end] = second.split('-')
-    secondRangeStart.value = parseInt(start) || 0
-    secondRangeEnd.value = parseInt(end) || 59
-  }
-  else if (second.includes(',')) {
-    secondType.value = 'specific'
-    secondSpecific.value = second.split(',').map(s => parseInt(s))
-  }
-  
-  // 其他字段类似解析...
 }
 
 // 监听模型值变化

@@ -90,7 +90,7 @@ const props = defineProps<{
   dataGroup: DataSource[]
   devices: Device[]
   readonly?: boolean
-  laboratoryId?: number
+  laboratoryId?: number | number[]
 }>()
 
 const emit = defineEmits<{
@@ -107,12 +107,16 @@ const usedDeviceIds = computed(() => {
 // 设备选项列表（包含禁用状态）
 const deviceOptions = computed(() => {
   let filtered = props.devices
-  
+
   // 如果指定了实验室，只显示该实验室的设备
-  if (props.laboratoryId) {
-    filtered = filtered.filter(d => (d as any).labId === props.laboratoryId)
+  if (props.laboratoryId !== undefined && props.laboratoryId !== null) {
+    if (Array.isArray(props.laboratoryId)) {
+      filtered = filtered.filter(d => props.laboratoryId!.includes((d as any).labId))
+    } else {
+      filtered = filtered.filter(d => (d as any).labId === props.laboratoryId)
+    }
   }
-  
+
   // 标记已使用的设备
   return filtered.map(device => ({
     ...device,

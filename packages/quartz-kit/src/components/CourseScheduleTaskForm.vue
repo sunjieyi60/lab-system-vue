@@ -16,6 +16,7 @@
       <DataSourceCard
         :data-group="formData.dataGroup"
         :devices="devices"
+        :laboratory-id="formData.laboratoryId"
         @add="handleAddDataSource"
         @remove="handleRemoveDataSource"
         @update-device="handleUpdateDataSourceDevice"
@@ -66,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import CourseScheduleCard from './cards/CourseScheduleCard.vue'
 import DataSourceCard from './cards/DataSourceCard.vue'
@@ -300,6 +301,23 @@ function handleArgsConfirm(args: number[]) {
     }
   }
 }
+
+// ============================================
+// 监听实验室变化
+// ============================================
+watch(() => formData.laboratoryId, (newVal, oldVal) => {
+  // 当实验室选择真正发生变化时（排除初始化），清空数据源和动作组中的设备
+  if (oldVal && oldVal.length > 0) {
+    formData.dataGroup = []
+    formData.actionGroups.forEach(ag => {
+      ag.actions.forEach(a => {
+        a.deviceId = 0
+        a.deviceType = 'AirCondition'
+      })
+    })
+    ElMessage.warning('实验室已切换，请重新选择设备')
+  }
+}, { deep: true })
 
 // ============================================
 // 表单验证

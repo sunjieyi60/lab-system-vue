@@ -124,7 +124,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="100" fixed="right">
+          <el-table-column label="操作" align="center" width="100">
             <template #default="{ row }">
               <el-button type="primary" size="small" @click="handleEditRow(row)">编辑</el-button>
             </template>
@@ -139,7 +139,7 @@
           v-model:page-size="pageSize"
           :total="total"
           :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
+          layout="sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
@@ -560,7 +560,7 @@ onUnmounted(() => {
 .intelligent-control-page {
   height:100%;
   padding: 16px;
-  background: #f5f7fa;
+  background: #fff;
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -578,9 +578,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   background: #fff;
-  padding: 16px 20px;
-  border-radius: 4px;
-  border: 1px solid #e8e8e8;
+  /* padding: 16px 20px; */
+  /* border-radius: 4px; */
+  /* border: 1px solid #e8e8e8; */
   justify-content: space-between;
 }
 
@@ -670,5 +670,61 @@ onUnmounted(() => {
   padding: 10px 20px;
   max-height: 70vh;
   overflow-y: auto;
+}
+@media (max-width: 768px) {
+  .intelligent-control-page {
+    padding: 8px;
+    height: auto;
+  }
+  .main-content {
+    gap: 8px;
+  }
+  .operation-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    gap: 8px;
+    background: transparent;
+    border: none;
+  }
+  .left-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .left-buttons :deep(.el-button) {
+    flex-shrink: 0;
+  }
+  .operation-bar > div:last-child {
+    display: flex !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .search-box {
+    flex: 1;
+    max-width: none !important;
+  }
+  .search-input {
+    width: 100%;
+  }
+  .stat-info {
+    margin-left: 0 !important;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .table-box {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 60vh;
+  }
+  .pagination-wrapper {
+    padding: 8px;
+    gap: 8px;
+  }
 }
 </style>

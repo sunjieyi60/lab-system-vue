@@ -12,4 +12,10 @@
 .asset-container {
   padding: 40px;
 }
+
+@media (max-width: 768px) {
+  .asset-container {
+    padding: 12px;
+  }
+}
 </style>

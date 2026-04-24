@@ -7,6 +7,8 @@
                     <el-button @click="handleAdd">添加</el-button>
                     <el-button @click="handleBatchEdit" :disabled="!selectedRows.length">修改</el-button>
                     <el-button @click="handleBatchDelete" :disabled="!selectedRows.length">删除</el-button>
+                </div>
+                <div class="right-actions">
                     <el-input 
                     v-model="searchKeyword" 
                     placeholder="请输入关键字" 
@@ -17,13 +19,12 @@
                         <el-icon><Search /></el-icon>
                     </template>
                     </el-input>
-                </div>
-                <div class="right-info">
                     <span class="total-badge"><span class="dot"></span>共 {{ filteredList.length }} 台</span>
                 </div>
             </div>
 
             <!-- 数据表格 -->
+            <div class="table-box">
             <el-table
             :data="paginatedList"
             stripe
@@ -71,10 +72,10 @@
                     </template>
                 </el-table-column>
             </el-table>
+            </div>
 
             <!-- 分页 -->
             <div class="pagination-wrapper">
-            <span class="total-text">共{{ filteredList.length }}条</span>
             <el-pagination
                 v-model:current-page="currentPage"
                 v-model:page-size="pageSize"
@@ -559,7 +560,7 @@ onUnmounted(() => {
   flex-direction: column;
   height: 100%;
   padding: 16px;
-  background: #f5f7fa;
+  background: #fff;
   box-sizing: border-box;
 }
 
@@ -576,7 +577,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  /* padding: 16px 20px; */
   border-radius: 4px;
   background: #fff;
   flex-shrink: 0;
@@ -604,6 +605,12 @@ onUnmounted(() => {
   background-color: #f5f5f5;
   border-color: #d9d9d9;
   color: #999;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .search-input {
@@ -649,11 +656,6 @@ onUnmounted(() => {
   padding: 12px 20px;
   border-radius: 4px;
   flex-shrink: 0;
-}
-
-.total-text {
-  color: #666;
-  font-size: 13px;
 }
 
 :deep(.el-table) {
@@ -740,5 +742,55 @@ onUnmounted(() => {
 .type-desc {
   font-size: 12px;
   color: #909399;
+}
+@media (max-width: 768px) {
+  .device-manage-page {
+    padding: 8px;
+    height: auto;
+  }
+  .main-content {
+    gap: 8px;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    gap: 8px;
+    background: transparent;
+  }
+  .left-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .left-actions :deep(.el-button) {
+    flex-shrink: 0;
+  }
+  .right-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .search-input {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+  }
+  .table-box {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 60vh;
+  }
+  .pagination-wrapper {
+    padding: 8px;
+    gap: 8px;
+  }
 }
 </style>

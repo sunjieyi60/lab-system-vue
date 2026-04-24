@@ -1,7 +1,12 @@
 <template>
   <div class="layout-container">
+    <!-- 移动端遮罩层 -->
+    <div v-if="isMobileMenuOpen" class="mobile-overlay" @click="closeMobileMenu"></div>
+
     <!-- 左侧导航栏 -->
-    <Slider />
+    <div class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
+      <Slider @menu-click="closeMobileMenu" />
+    </div>
 
     <!-- 右侧主内容 -->
     <div class="right-container">
@@ -19,11 +24,15 @@
 </template>
 
 <script setup>
+import { inject } from "vue";
 import { useRoute } from "vue-router";
 import Slider from "@/components/common/slider.vue";
 import AppHeader from "@/components/common/AppHeader.vue";
 
 const route = useRoute();
+
+/* 注入全局移动端菜单状态 */
+const { isMobileMenuOpen, closeMobileMenu } = inject("mobileMenu");
 </script>
 
 <style scoped>
@@ -33,13 +42,15 @@ const route = useRoute();
   width: 100%;
   height: 100%; /* 由父容器 .app-content 控制高度 */
   overflow: hidden;
+  position: relative;
 }
 
 /* 左侧导航栏固定宽度 */
-.layout-container > :first-child {
+.sidebar {
   width: 168px;
   flex-shrink: 0;
   background-color: transparent; /* 导航栏颜色 */
+  transition: transform 0.3s ease;
 }
 
 /* 清除左侧菜单的右侧边框 */
@@ -93,5 +104,54 @@ const route = useRoute();
   background: rgba(123, 171, 209, 0.4);
   border-radius: 12px;
   z-index: -1; /* 保证在文字下方 */
+}
+
+/* ==================== 移动端适配 ==================== */
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  /* 侧边栏变为抽屉式 */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    z-index: 9999;
+    background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+    transform: translateX(-100%);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* 遮罩层 */
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9998;
+  }
+
+  .right-container {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .main-content {
+    padding: 0 8px 8px;
+    overflow: visible;
+  }
 }
 </style>

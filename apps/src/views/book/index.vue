@@ -12,4 +12,10 @@
 .book-container {
   padding: 40px;
 }
+
+@media (max-width: 768px) {
+  .book-container {
+    padding: 12px;
+  }
+}
 </style>

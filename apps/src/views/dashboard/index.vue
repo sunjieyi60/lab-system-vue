@@ -587,11 +587,43 @@ const loadLabData = async (semesterId) => {
 
 /* 响应式：小屏幕时调整 */
 @media (max-width: 768px) {
+  .dashboard {
+    padding: 8px 4px;
+  }
+  .dashboard-row {
+    flex-direction: column;
+    height: auto;
+    gap: 12px;
+  }
+  .left-column,
+  .center-column,
+  .right-column {
+    gap: 12px;
+  }
+  .stat-value {
+    font-size: 36px;
+  }
+  .control-header,
+  .alarm-header {
+    flex-direction: column;
+  }
+  .filter-selects {
+    width: 100%;
+  }
+  .filter-selects .el-select {
+    flex: 1;
+  }
 
-  .dashboard-card,
-  .single-card,
-  .alarm-card {
-    min-height: 180px;
+  /* 表格横向滚动 */
+  .facility-content,
+  .lab-table-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    width: auto !important;
+    min-width: 500px;
   }
 }
 </style>

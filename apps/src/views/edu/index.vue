@@ -23,7 +23,8 @@
       </el-input>
     </div>
 
-    <el-table
+    <div class="table-box">
+      <el-table
       :data="tableData"
       row-key="id"
       @selection-change="selected = $event"
@@ -38,39 +39,40 @@
     >
       <el-table-column
         type="selection"
-        min-width="30"
+        min-width="55"
         header-align="center"
         align="center"
       />
       <el-table-column
         type="index"
         label="序号"
-        min-width="15"
+        min-width="60"
         header-align="center"
         align="center"
       />
       <el-table-column
         prop="name"
         label="学年学期"
-        min-width="70"
+        min-width="160"
         header-align="center"
         align="center"
       />
       <el-table-column
         prop="startDate"
         label="起始时间"
-        min-width="60"
+        min-width="110"
         header-align="center"
         align="center"
       />
       <el-table-column
         prop="endDate"
         label="截止时间"
-        min-width="60"
+        min-width="110"
         header-align="center"
         align="center"
       />
     </el-table>
+    </div>
 
     <!-- 分页 -->
     <div class="pagination-wrapper">
@@ -303,5 +305,14 @@ async function submitMod(form) {
 :deep(.el-table) {
   flex: 1;
   box-shadow: none;
+}
+@media (max-width: 768px) {
+  .edu-term-page {
+    padding: 8px;
+    height: auto;
+  }
+  .page-header {
+    flex-wrap: wrap;
+  }
 }
 </style>

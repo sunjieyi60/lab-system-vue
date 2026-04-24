@@ -796,4 +796,47 @@ onMounted(async () => {
   min-height: 0;
   overflow: hidden;
 }
+@media (max-width: 768px) {
+  .schedule-page {
+    padding: 8px;
+    height: auto;
+  }
+
+  .filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .filter-bar > * {
+    flex-shrink: 0;
+  }
+
+  .form-item {
+    flex: none;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .button-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .button-bar .el-button {
+    flex: none;
+    min-width: auto;
+    white-space: nowrap;
+  }
+
+  .calendar-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 </style>

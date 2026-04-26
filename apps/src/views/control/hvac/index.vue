@@ -131,8 +131,8 @@
       <!-- 控制模式切换 -->
       <div class="control-mode-switch">
         <el-radio-group v-model="controlMode" size="large">
-          <el-radio-button label="simple">简单控制</el-radio-button>
-          <el-radio-button label="enhanced">增强控制</el-radio-button>
+          <el-radio-button label="simple">开关控制</el-radio-button>
+          <el-radio-button label="enhanced">组合控制</el-radio-button>
         </el-radio-group>
       </div>
 
@@ -171,8 +171,8 @@
       <!-- 控制模式切换 -->
       <div class="control-mode-switch">
         <el-radio-group v-model="controlMode" size="large">
-          <el-radio-button label="simple">简单控制</el-radio-button>
-          <el-radio-button label="enhanced">增强控制</el-radio-button>
+          <el-radio-button label="simple">开关控制</el-radio-button>
+          <el-radio-button label="enhanced">组合控制</el-radio-button>
         </el-radio-group>
       </div>
       
@@ -366,7 +366,7 @@ const simpleControlConfig = {
   showPowerOff: true,
   showQueryStatus: false,
   showEnhancedControl: false,
-  showDeviceInfo: true,
+  showDeviceInfo: false,
   showInfoId: true,
   showInfoName: true,
   showInfoAddress: true,
@@ -375,7 +375,7 @@ const simpleControlConfig = {
   showInfoGateway: true,
   showInfoSocketGateway: false,
   showSectionTitles: true,
-  enhancedControlTitle: '增强控制',
+  enhancedControlTitle: '组合控制',
   deviceInfoTitle: '设备信息',
   powerOnText: '开机',
   powerOffText: '关机',
@@ -404,7 +404,7 @@ const enhancedControlConfig = {
   showTemperature: true,
   showSpeed: true,
   showApplyButton: true,
-  showDeviceInfo: true,
+  showDeviceInfo: false,
   showInfoId: true,
   showInfoName: true,
   showInfoAddress: true,
@@ -413,7 +413,7 @@ const enhancedControlConfig = {
   showInfoGateway: true,
   showInfoSocketGateway: false,
   showSectionTitles: true,
-  enhancedControlTitle: '增强控制',
+  enhancedControlTitle: '组合控制',
   deviceInfoTitle: '设备信息',
   powerOnText: '开机',
   powerOffText: '关机',

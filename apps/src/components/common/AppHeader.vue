@@ -37,13 +37,13 @@ const menuMap = {
     { title: "实验室课表", index: "/edu/timetable" },
   ],
   "/control": [
-    { title: "中央空调", index: "/control/hvac" },
-    { title: "门禁管理", index: "/control/access" },
+    { title: "中央空调监控", index: "/control/hvac" },
+    { title: "门禁监控", index: "/control/access" },
     { title: "电气监控", index: "/control/electric" },
     { title: "电灯开关监控", index: "/control/light" },
     { title: "环境监控", index: "/control/env" },
+    { title: "智控设置", index: "/control/intelligent" },
     { title: "设备管理", index: "/control/device" },
-    { title: "智控设备", index: "/control/intelligent" },
   ],
   "/data": [
     { title: "教务数据", index: "/data/edu" },

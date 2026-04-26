@@ -10,8 +10,8 @@
             </template>
             <div class="lab-stat-content">
               <div class="stat-item">
-                <div class="stat-value">{{ userStore.userInfo?.buildings?.length || "暂无数据" }}</div>
-                <div class="stat-label">楼栋数量</div>
+                <div class="stat-value">{{ userStore.userInfo?.laboratories?.length || "暂无数据" }}</div>
+                <div class="stat-label">实验室数量</div>
               </div>
             </div>
           </el-card>
@@ -51,6 +51,7 @@
                     @change="handleSemesterChange">
                     <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id" />
                   </el-select>
+                  <div class="state-count-text">总数:{{ overviewLabData.length }}</div>
                 </div>
               </div>
             </template>
@@ -191,11 +192,12 @@ const getDeviceRatio = (devices, type) => {
 
 const getEnvText = (env) => {
   if (!env || !env.data) return "-";
-  const { temperature, humidity, light } = env.data;
+  const { temperature, humidity, light, smoke } = env.data;
   const parts = [];
   if (temperature !== undefined && temperature !== null) parts.push(`${temperature}℃`);
   if (humidity !== undefined && humidity !== null) parts.push(`${humidity}%`);
   if (light !== undefined && light !== null) parts.push(`${light}Lux`);
+  if (smoke !== undefined && smoke !== null) parts.push(`${smoke}mg/m³`)
   return parts.join("，") || "-";
 };
 
@@ -428,6 +430,11 @@ const loadLabData = async (semesterId) => {
   flex-direction: column;
   padding: 12px;
   height: calc(100% - 40px);
+}
+
+.state-count-text {
+  display: flex;
+  font-weight: bolder;
 }
 
 .lab-table-content {

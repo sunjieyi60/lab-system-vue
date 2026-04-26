@@ -292,7 +292,7 @@ const circuitBreakControlConfig = {
   showConfirmDialog: true,
   showQuickActions: false,
   showQueryStatus: false,
-  showDeviceInfo: true,
+  showDeviceInfo: false,
   showInfoId: true,
   showInfoName: true,
   showInfoAddress: true,

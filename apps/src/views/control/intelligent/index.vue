@@ -50,8 +50,8 @@
       <!-- 操作栏 -->
       <div class="operation-bar">
         <div class="left-buttons">
-          <el-button type="primary" plain @click="handleAdd">添加</el-button>
-          <el-button type="info" plain @click="handleGenerateFromCourse">从课表生成</el-button>
+          <el-button type="primary" plain @click="handleAdd">手动添加</el-button>
+          <el-button type="info" plain @click="handleGenerateFromCourse">课表联动</el-button>
           <el-button type="danger" plain @click="handleDelete">删除</el-button>
           <el-button type="success" plain @click="handleBatchEnable">批量启用</el-button>
           <el-button type="warning" plain @click="handleBatchDisable">批量禁用</el-button>

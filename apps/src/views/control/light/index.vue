@@ -279,7 +279,7 @@ const lightControlConfig = {
   showOpenButton: true,
   showCloseButton: true,
   showQueryStatus: false,
-  showDeviceInfo: true,
+  showDeviceInfo: false,
   showInfoId: true,
   showInfoName: true,
   showInfoAddress: true,
